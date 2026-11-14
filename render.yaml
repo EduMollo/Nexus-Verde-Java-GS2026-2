@@ -3,27 +3,34 @@ services:
     name: nexus-verde-java-gs2026-2
     runtime: docker
     plan: free
+    region: virginia
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod,demo
-      - key: DB_URL
-        sync: false
+      - key: DB_HOST
+        fromDatabase:
+          name: nexus-verde-gs2026-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: nexus-verde-gs2026-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: nexus-verde-gs2026-db
+          property: database
       - key: DB_USER
-        sync: false
+        fromDatabase:
+          name: nexus-verde-gs2026-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: nexus-verde-gs2026-db
+          property: password
       - key: JWT_SECRET
         generateValue: true
       - key: EQUIPE_EMAIL
         value: equipe@nexusverde.example
       - key: EQUIPE_SENHA
-        generateValue: true
-      - key: RABBITMQ_URL
-        sync: false
-      - key: NEXUS_RABBIT_ENABLED
-        value: "true"
-      - key: NEXUS_CHAT_MODEL
-        value: openai
-      - key: OPENAI_API_KEY
         sync: false
