@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  rabbitmq:
+    addresses: ${RABBITMQ_URL}
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+nexus:
+  jwt-secret: ${JWT_SECRET}

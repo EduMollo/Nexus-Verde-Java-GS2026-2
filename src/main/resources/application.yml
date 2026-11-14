@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: nexus-verde
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:nexusverde;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 6
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    addresses: ${RABBITMQ_URL:amqp://guest:guest@localhost:5672}
+    connection-timeout: 3s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 4
+          initial-interval: 1s
+          multiplier: 2
+  ai:
+    model:
+      embedding: none
+      chat: ${NEXUS_CHAT_MODEL:none}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4.1-mini}
+    retry:
+      max-attempts: 1
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  tomcat:
+    threads:
+      max: 30
+  servlet:
+    session:
+      timeout: 30m
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    rabbit:
+      enabled: ${NEXUS_RABBIT_ENABLED:false}
+
+springdoc:
+  paths-to-match: /api/**
+  swagger-ui:
+    disable-swagger-default-url: true
+
+nexus:
+  jwt-secret: ${JWT_SECRET:}
+  rabbit-enabled: ${NEXUS_RABBIT_ENABLED:false}
+  demo: ${NEXUS_DEMO:false}
+  equipe-email: ${EQUIPE_EMAIL:}
+  equipe-senha: ${EQUIPE_SENHA:}
