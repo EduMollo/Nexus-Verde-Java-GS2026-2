@@ -1,0 +1,7 @@
+.git
+target
+entrega
+data
+.env
+.env.*
+*.log

@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: nexusverde
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus-local-db}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexusverde"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: nexus
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nexus-local-queue}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 16
+    volumes:
+      - fila:/var/lib/rabbitmq
+  api:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      DB_URL: jdbc:postgresql://postgres:5432/nexusverde
+      DB_USER: nexus
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-nexus-local-db}
+      RABBITMQ_URL: amqp://nexus:${RABBITMQ_PASSWORD:-nexus-local-queue}@rabbitmq:5672
+      NEXUS_RABBIT_ENABLED: "true"
+      EQUIPE_EMAIL: ${EQUIPE_EMAIL:-equipe@nexusverde.example}
+      EQUIPE_SENHA: ${EQUIPE_SENHA:-NexusLocal-2026}
+      NEXUS_CHAT_MODEL: ${NEXUS_CHAT_MODEL:-none}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+volumes:
+  dados:
+  fila:

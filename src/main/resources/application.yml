@@ -11,11 +11,20 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  jackson:
+    deserialization:
+      fail-on-numbers-for-enums: true
+  data:
+    web:
+      pageable:
+        max-page-size: 200
   rabbitmq:
     addresses: ${RABBITMQ_URL:amqp://guest:guest@localhost:5672}
     connection-timeout: 3s
     publisher-confirm-type: correlated
     publisher-returns: true
+    template:
+      mandatory: true
     listener:
       simple:
         default-requeue-rejected: false
@@ -27,6 +36,11 @@ spring:
   ai:
     model:
       embedding: none
+      audio:
+        speech: none
+        transcription: none
+      image: none
+      moderation: none
       chat: ${NEXUS_CHAT_MODEL:none}
     openai:
       api-key: ${OPENAI_API_KEY:}

@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: nexus-verde-java-gs2026-2
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod,demo
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EQUIPE_EMAIL
+        value: equipe@nexusverde.example
+      - key: EQUIPE_SENHA
+        generateValue: true
+      - key: RABBITMQ_URL
+        sync: false
+      - key: NEXUS_RABBIT_ENABLED
+        value: "true"
+      - key: NEXUS_CHAT_MODEL
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
