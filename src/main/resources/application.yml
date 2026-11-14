@@ -36,6 +36,11 @@ spring:
   ai:
     model:
       embedding: none
+      audio:
+        speech: none
+        transcription: none
+      image: none
+      moderation: none
       chat: ${NEXUS_CHAT_MODEL:none}
     openai:
       api-key: ${OPENAI_API_KEY:}

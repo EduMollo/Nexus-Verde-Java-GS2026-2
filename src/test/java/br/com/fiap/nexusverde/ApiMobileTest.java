@@ -2,6 +2,10 @@ package br.com.fiap.nexusverde;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -42,6 +47,32 @@ class ApiMobileTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+
+    @Test
+    void swaggerPublicaOContratoEPainelExigeSessaoDaEquipe() throws Exception {
+        var swagger = corpo(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn());
+        for (String rota : new String[] {
+                "/api/auth/register", "/api/auth/login", "/api/solicitacoes", "/api/solicitacoes/{id}",
+                "/api/solicitacoes/{id}/status", "/api/pontos-agua", "/api/pontos-agua/{id}", "/api/regioes"
+        }) {
+            assertThat(swagger.path("paths").has(rota)).as(rota).isTrue();
+        }
+
+        mvc.perform(get("/painel")).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/painel/entrar"));
+        var login = mvc.perform(get("/painel/entrar")).andExpect(status().isOk()).andReturn();
+        var token = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"")
+                .matcher(login.getResponse().getContentAsString());
+        assertThat(token.find()).isTrue();
+        MockHttpSession sessao = (MockHttpSession) login.getRequest().getSession(false);
+        var entrou = mvc.perform(post("/painel/entrar").session(sessao).param("_csrf", token.group(1))
+                        .param("username", "equipe-test@example.com").param("password", "Equipe-Teste-2026"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/painel")).andReturn();
+        sessao = (MockHttpSession) entrou.getRequest().getSession(false);
+        mvc.perform(get("/painel").session(sessao))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Painel de abastecimento")));
+        mvc.perform(get("/api/regioes").session(sessao)).andExpect(status().isUnauthorized());
+    }
 
     @Test
     void loginCadastroETratamentoDeErros() throws Exception {
