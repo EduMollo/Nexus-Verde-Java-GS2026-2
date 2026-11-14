@@ -2,6 +2,14 @@
 
 CitizenTech para ajudar moradores afetados por interrupções de abastecimento a localizar pontos de distribuição e solicitar água. A equipe acompanha a disponibilidade, organiza a triagem e registra o andamento. Os dados da carga acadêmica são fictícios.
 
+## Demonstração online
+
+- [API do Mobile](https://nexus-verde-java-gs2026-2-tprk.onrender.com/api)
+- [Swagger](https://nexus-verde-java-gs2026-2-tprk.onrender.com/swagger-ui/index.html)
+- [Painel da equipe](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
+
+Nos testes do Mobile, configure a URL base com o sufixo `/api`. A conta de avaliação do ambiente online é distribuída pela equipe.
+
 ## Executar
 
 Requisitos: JDK 21 e Maven Wrapper. A primeira execução baixa as dependências.
