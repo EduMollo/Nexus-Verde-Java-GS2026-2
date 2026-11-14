@@ -6,6 +6,7 @@ import br.com.fiap.nexusverde.web.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,27 +14,27 @@ import org.springframework.stereotype.Service;
 @Service
 class TriagemIa {
     private static final Logger log = LoggerFactory.getLogger(TriagemIa.class);
-    private final ObjectProvider<ChatClient.Builder> clientes;
+    private final ObjectProvider<ChatModel> modelos;
     private final SolicitacaoService pedidos;
 
-    TriagemIa(ObjectProvider<ChatClient.Builder> clientes, SolicitacaoService pedidos) {
-        this.clientes = clientes;
+    TriagemIa(ObjectProvider<ChatModel> modelos, SolicitacaoService pedidos) {
+        this.modelos = modelos;
         this.pedidos = pedidos;
     }
 
     boolean disponivel() {
-        return clientes.getIfAvailable() != null;
+        return modelos.getIfAvailable() != null;
     }
 
     void analisar(Ator ator, Long id) {
         var dados = pedidos.contexto(ator, id);
-        var cliente = clientes.getIfAvailable();
-        if (cliente == null) {
+        var modelo = modelos.getIfAvailable();
+        if (modelo == null) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "A análise por IA não está configurada.");
         }
         String texto;
         try {
-            texto = cliente.build().prompt()
+            texto = ChatClient.create(modelo).prompt()
                     .system("""
                             Auxilie uma equipe humana a triar pedidos de água em um protótipo acadêmico.
                             Em até duas frases em português, justifique a prioridade informada e sugira

@@ -86,7 +86,9 @@ No painel, a equipe pode gerar uma análise com Spring AI. O modelo recebe tipo,
 
 O `Dockerfile` gera a imagem do serviço. Em um host de containers HTTPS, use `SPRING_PROFILES_ACTIVE=prod,demo` com um PostgreSQL dedicado à avaliação. Configure `PORT`, `DB_URL` (JDBC), `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo de 32 bytes), `EQUIPE_EMAIL`, `EQUIPE_SENHA`, `RABBITMQ_URL`, `NEXUS_RABBIT_ENABLED=true` e as variáveis do modelo. Configure o host para checar `/actuator/health`. As credenciais da conta de avaliação devem ser compartilhadas no canal da equipe.
 
-Use `./mvnw clean verify` ou `.\mvnw.cmd clean verify`. O workflow Java executa a mesma verificação em PRs e em pushes para `main`.
+Para publicar no Render, importe o repositório como Blueprint. O `render.yaml` usa um serviço gratuito e solicita as credenciais de PostgreSQL, RabbitMQ e do provedor de IA nas configurações do serviço. Use uma URL JDBC com TLS se o banco estiver fora da rede privada do serviço. O Blueprint gera o segredo do JWT e a senha da equipe de avaliação.
+
+Use `./mvnw clean verify` ou `.\mvnw.cmd clean verify`. O workflow Java executa a verificação com H2 e também testa a publicação e o consumo reais com PostgreSQL e RabbitMQ. Os testes de IA usam um modelo simulado para verificar o envio e o armazenamento da resposta.
 
 ## Uso de IA no desenvolvimento
 
