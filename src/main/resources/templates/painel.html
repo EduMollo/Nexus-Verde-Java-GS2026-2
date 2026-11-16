@@ -3,49 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102f29">
     <title>Painel da equipe · Nexus Verde</title>
-    <link rel="stylesheet" th:href="@{/assets/painel.css}">
+    <link rel="stylesheet" th:href="@{/assets/painel.css(v=2)}">
 </head>
-<body>
-<header>
-    <div class="topo">
-        <a class="marca" th:href="@{/painel}">Nexus Verde</a>
-        <nav aria-label="Painel">
-            <a href="#solicitacoes">Solicitações</a>
-            <a href="#pontos">Pontos de água</a>
-        </nav>
-        <form th:action="@{/painel/sair}" method="post"><button class="secundario">Sair</button></form>
+<body class="painel">
+<a class="pular" href="#visao-geral">Ir para o conteúdo</a>
+<aside class="barra-lateral">
+    <a class="marca" th:href="@{/painel}">
+        <span class="marca-simbolo" aria-hidden="true"></span>
+        <span>Nexus Verde</span>
+    </a>
+    <nav class="navegacao" aria-label="Painel">
+        <a href="#visao-geral"><span class="icone icone-grade" aria-hidden="true"></span>Visão geral</a>
+        <a href="#solicitacoes"><span class="icone icone-lista" aria-hidden="true"></span>Solicitações</a>
+        <a href="#pontos"><span class="icone icone-gota" aria-hidden="true"></span>Pontos de água</a>
+    </nav>
+    <form class="sair" th:action="@{/painel/sair}" method="post">
+        <button type="submit"><span class="icone icone-sair" aria-hidden="true"></span>Sair</button>
+    </form>
+</aside>
+<main id="visao-geral" class="conteudo" tabindex="-1">
+    <div class="cabecalho">
+        <span>Área da equipe</span>
+        <span th:if="${demo}" class="demo">Demonstração acadêmica</span>
     </div>
-</header>
-<main class="conteudo">
-    <h1>Painel de abastecimento</h1>
-    <p th:if="${demo}" class="mensagem">Ambiente acadêmico de demonstração. Pontos e solicitações fictícios.</p>
+
+    <section class="resumo" aria-labelledby="titulo-painel">
+        <div class="ondas" aria-hidden="true"></div>
+        <div class="resumo-texto">
+            <h1 id="titulo-painel">Painel de abastecimento</h1>
+            <p>Acompanhe os pedidos de ajuda e a disponibilidade de água nos pontos de distribuição.</p>
+            <p th:if="${demo}" class="nota-demo">Os pedidos e pontos de água desta demonstração são fictícios.</p>
+        </div>
+    </section>
+
+    <dl class="indicadores" aria-label="Resumo do abastecimento">
+        <div class="indicador">
+            <span class="indicador-icone" aria-hidden="true"><span class="icone icone-lista"></span></span>
+            <div><dt>Solicitações registradas</dt><dd th:text="${pedidos.totalElements()}"></dd></div>
+        </div>
+        <div class="indicador indicador-triagem">
+            <span class="indicador-icone" aria-hidden="true"><span class="icone icone-grade"></span></span>
+            <div><dt>Pedidos abertos na fila de triagem</dt><dd th:text="${triagem}"></dd></div>
+        </div>
+        <div class="indicador indicador-agua">
+            <span class="indicador-icone" aria-hidden="true"><span class="icone icone-gota"></span></span>
+            <div><dt>Pontos de água cadastrados</dt><dd th:text="${pontos.totalElements()}"></dd></div>
+        </div>
+    </dl>
+
     <p th:if="${sucesso}" class="mensagem" role="status" th:text="${sucesso}"></p>
     <p th:if="${erro}" class="mensagem erro" role="alert" th:text="${erro}"></p>
 
-    <section id="solicitacoes" aria-labelledby="titulo-solicitacoes">
-        <div class="secao">
-            <h2 id="titulo-solicitacoes">Solicitações</h2>
-            <p><strong th:text="${triagem}"></strong> pedidos abertos recebidos pela fila de triagem</p>
-            <p th:unless="${iaDisponivel}" class="muted">Análise por IA indisponível. A triagem manual está disponível.</p>
+    <section class="secao" id="solicitacoes" aria-labelledby="titulo-solicitacoes">
+        <div class="secao-cabecalho">
+            <div>
+                <h2 id="titulo-solicitacoes">Solicitações</h2>
+                <p>Consulte a urgência e atualize o andamento dos pedidos.</p>
+            </div>
         </div>
-        <p th:if="${#lists.isEmpty(pedidos.content())}" class="cartao">Nenhuma solicitação nesta página.</p>
+        <p th:unless="${iaDisponivel}" class="mensagem aviso">Análise por IA indisponível. A triagem manual está disponível.</p>
+        <p th:if="${#lists.isEmpty(pedidos.content())}" class="estado-vazio">Nenhuma solicitação nesta página.</p>
         <div class="grade">
             <article class="cartao" th:each="pedido : ${pedidos.content()}">
-                <div class="linha">
+                <div class="cartao-cabecalho">
                     <h3 th:text="|Pedido #${pedido.id()}|"></h3>
-                    <span class="estado" th:text="${#strings.replace(pedido.status().name(), '_', ' ')}"></span>
+                    <span class="estado" th:attr="data-estado=${pedido.status().name()}" th:text="${#strings.replace(pedido.status().name(), '_', ' ')}"></span>
                 </div>
-                <p th:text="${pedido.descricao()}"></p>
-                <p class="muted" th:text="|${pedido.cidade()} · ${pedido.quantidadePessoas()} pessoa(s) · urgência ${pedido.urgencia()}|"></p>
-                <p th:text="${pedido.endereco()}"></p>
-                <p><strong th:text="|Prioridade ${pedido.prioridade()}/100|"></strong></p>
-                <p th:if="${pedido.analiseIa() != null}" class="mensagem" th:text="${pedido.analiseIa()}"></p>
+                <p class="descricao" th:text="${pedido.descricao()}"></p>
+                <dl class="metadados">
+                    <div class="local">
+                        <dt>Local</dt><dd th:text="|${pedido.endereco()} · ${pedido.cidade()}|"></dd>
+                    </div>
+                    <div>
+                        <dt>Pessoas afetadas</dt><dd th:text="${pedido.quantidadePessoas()}"></dd>
+                    </div>
+                    <div>
+                        <dt>Urgência</dt>
+                        <dd class="urgencia" th:attr="data-urgencia=${pedido.urgencia().name()}" th:text="${pedido.urgencia()}"></dd>
+                    </div>
+                </dl>
+                <div class="medicao" th:if="${pedido.prioridade() != null}">
+                    <div class="medicao-rotulo"><span>Prioridade</span><strong th:text="|${pedido.prioridade()}/100|"></strong></div>
+                    <meter min="0" max="100" th:value="${pedido.prioridade()}" aria-label="Prioridade"></meter>
+                </div>
+                <div class="analise" th:if="${pedido.analiseIa() != null}">
+                    <h4>Análise por IA</h4>
+                    <p th:text="${pedido.analiseIa()}"></p>
+                </div>
                 <div class="acoes" th:if="${pedido.status().name() == 'ABERTA' or pedido.status().name() == 'EM_ATENDIMENTO'}">
                     <form th:action="@{/painel/pedidos/{id}/status(id=${pedido.id()})}" method="post">
                         <button name="status" th:if="${pedido.status().name() == 'ABERTA'}" value="EM_ATENDIMENTO">Iniciar atendimento</button>
                         <button name="status" th:if="${pedido.status().name() == 'EM_ATENDIMENTO'}" value="ATENDIDA">Marcar atendida</button>
-                        <button class="secundario" name="status" value="CANCELADA">Cancelar pedido</button>
+                        <button class="acao-cancelar" name="status" value="CANCELADA">Cancelar pedido</button>
                     </form>
                     <form th:if="${iaDisponivel}" th:action="@{/painel/pedidos/{id}/analise(id=${pedido.id()})}" method="post">
                         <button class="secundario">Gerar análise por IA</button>
@@ -54,20 +105,35 @@
             </article>
         </div>
         <nav class="paginacao" th:if="${pedidos.totalPages() > 1}" aria-label="Páginas de solicitações">
-            <a th:if="${pedidos.number() > 0}" th:href="@{/painel(pagina=${pedidos.number()-1},paginaPontos=${pontos.number()})}">Anterior</a>
+            <a th:if="${pedidos.number() > 0}" th:href="@{/painel(pagina=${pedidos.number()-1},paginaPontos=${pontos.number()})} + '#solicitacoes'">Anterior</a>
             <span th:text="|Página ${pedidos.number()+1} de ${pedidos.totalPages()}|"></span>
-            <a th:if="${pedidos.number()+1 < pedidos.totalPages()}" th:href="@{/painel(pagina=${pedidos.number()+1},paginaPontos=${pontos.number()})}">Próxima</a>
+            <a th:if="${pedidos.number()+1 < pedidos.totalPages()}" th:href="@{/painel(pagina=${pedidos.number()+1},paginaPontos=${pontos.number()})} + '#solicitacoes'">Próxima</a>
         </nav>
     </section>
 
-    <section id="pontos" aria-labelledby="titulo-pontos">
-        <div class="secao"><h2 id="titulo-pontos">Pontos de água</h2></div>
-        <p th:if="${#lists.isEmpty(pontos.content())}" class="cartao">Nenhum ponto de água nesta página.</p>
+    <section class="secao" id="pontos" aria-labelledby="titulo-pontos">
+        <div class="secao-cabecalho">
+            <div>
+                <h2 id="titulo-pontos">Pontos de água</h2>
+                <p>Consulte o estoque e atualize a disponibilidade de cada ponto.</p>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(pontos.content())}" class="estado-vazio">Nenhum ponto de água nesta página.</p>
         <div class="grade">
-            <article class="cartao" th:each="ponto : ${pontos.content()}">
-                <h3 th:text="${ponto.nome()}"></h3>
-                <p class="muted" th:text="|${ponto.cidade()} · ${ponto.endereco()}|"></p>
-                <p th:text="|Estoque atual: ${ponto.estoqueLitros()} de ${ponto.capacidadeLitros()} L|"></p>
+            <article class="cartao cartao-ponto" th:each="ponto : ${pontos.content()}">
+                <div class="cartao-cabecalho">
+                    <h3 th:text="${ponto.nome()}"></h3>
+                    <span class="estado" th:attr="data-estado=${ponto.status().name()}" th:text="${#strings.replace(ponto.status().name(), '_', ' ')}"></span>
+                </div>
+                <p class="endereco-ponto" th:text="|${ponto.endereco()} · ${ponto.cidade()}|"></p>
+                <div class="medicao medicao-estoque">
+                    <div class="medicao-rotulo">
+                        <span>Estoque atual</span>
+                        <strong th:text="|${ponto.estoqueLitros()} de ${ponto.capacidadeLitros()} L|"></strong>
+                    </div>
+                    <meter th:if="${ponto.capacidadeLitros() > 0}" min="0" th:max="${ponto.capacidadeLitros()}"
+                           th:value="${ponto.estoqueLitros()}" aria-label="Estoque em litros"></meter>
+                </div>
                 <form class="disponibilidade" method="post" th:action="@{/painel/pontos/{id}/disponibilidade(id=${ponto.id()})}">
                     <label>Status
                         <select name="status">
@@ -84,9 +150,9 @@
             </article>
         </div>
         <nav class="paginacao" th:if="${pontos.totalPages() > 1}" aria-label="Páginas de pontos">
-            <a th:if="${pontos.number() > 0}" th:href="@{/painel(pagina=${pedidos.number()},paginaPontos=${pontos.number()-1})}">Anterior</a>
+            <a th:if="${pontos.number() > 0}" th:href="@{/painel(pagina=${pedidos.number()},paginaPontos=${pontos.number()-1})} + '#pontos'">Anterior</a>
             <span th:text="|Página ${pontos.number()+1} de ${pontos.totalPages()}|"></span>
-            <a th:if="${pontos.number()+1 < pontos.totalPages()}" th:href="@{/painel(pagina=${pedidos.number()},paginaPontos=${pontos.number()+1})}">Próxima</a>
+            <a th:if="${pontos.number()+1 < pontos.totalPages()}" th:href="@{/painel(pagina=${pedidos.number()},paginaPontos=${pontos.number()+1})} + '#pontos'">Próxima</a>
         </nav>
     </section>
 </main>

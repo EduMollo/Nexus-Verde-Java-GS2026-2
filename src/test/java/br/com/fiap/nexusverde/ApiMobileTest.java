@@ -60,7 +60,8 @@ class ApiMobileTest {
 
         mvc.perform(get("/painel")).andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("http://localhost/painel/entrar"));
-        var login = mvc.perform(get("/painel/entrar")).andExpect(status().isOk()).andReturn();
+        var login = mvc.perform(get("/painel/entrar")).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Entrar no painel"))).andReturn();
         var token = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"")
                 .matcher(login.getResponse().getContentAsString());
         assertThat(token.find()).isTrue();
@@ -69,8 +70,22 @@ class ApiMobileTest {
                         .param("username", "equipe-test@example.com").param("password", "Equipe-Teste-2026"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/painel")).andReturn();
         sessao = (MockHttpSession) entrou.getRequest().getSession(false);
+        long pedido = criarPedido(cadastrar("painel@example.com"));
+        String equipeApi = equipe();
+        long ponto = corpo(mvc.perform(post("/api/pontos-agua").header("Authorization", equipeApi)
+                        .contentType(MediaType.APPLICATION_JSON).content(PONTO))
+                .andExpect(status().isCreated()).andReturn()).path("id").asLong();
+
         mvc.perform(get("/painel").session(sessao))
-                .andExpect(status().isOk()).andExpect(content().string(containsString("Painel de abastecimento")));
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Painel de abastecimento")))
+                .andExpect(content().string(containsString("/assets/painel.css?v=2")))
+                .andExpect(content().string(containsString("/painel/pedidos/" + pedido + "/status")))
+                .andExpect(content().string(containsString("70/100")))
+                .andExpect(content().string(containsString("/painel/pontos/" + ponto + "/disponibilidade")))
+                .andExpect(content().string(containsString("1000 de 3000 L")));
+        mvc.perform(delete("/api/pontos-agua/{id}", ponto).header("Authorization", equipeApi))
+                .andExpect(status().isNoContent());
         mvc.perform(get("/api/regioes").session(sessao)).andExpect(status().isUnauthorized());
     }
 
