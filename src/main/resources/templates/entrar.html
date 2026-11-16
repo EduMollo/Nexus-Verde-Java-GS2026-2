@@ -3,19 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102f29">
     <title>Entrar · Nexus Verde</title>
-    <link rel="stylesheet" th:href="@{/assets/painel.css}">
+    <link rel="stylesheet" th:href="@{/assets/painel.css(v=2)}">
 </head>
 <body class="login">
-<main class="cartao login-cartao">
-    <p class="marca">Nexus Verde</p>
-    <h1>Acesso da equipe</h1>
-    <p th:if="${param.erro}" class="mensagem erro" role="alert">Confira o e-mail e a senha da equipe.</p>
-    <form th:action="@{/painel/entrar}" method="post" class="login-formulario">
-        <label>E-mail <input type="email" name="username" autocomplete="username" required></label>
-        <label>Senha <input type="password" name="password" autocomplete="current-password" required></label>
-        <button type="submit">Entrar</button>
-    </form>
+<main class="login-pagina">
+    <section class="login-apresentacao" aria-labelledby="titulo-acesso">
+        <div class="ondas" aria-hidden="true"></div>
+        <div class="marca">
+            <span class="marca-simbolo" aria-hidden="true"></span>
+            <span>Nexus Verde</span>
+        </div>
+        <div class="login-apresentacao-texto">
+            <h1 id="titulo-acesso">Água para quem precisa.</h1>
+            <p>Um painel para organizar o atendimento e a distribuição de água em situações de crise.</p>
+        </div>
+    </section>
+    <section class="login-acesso" aria-labelledby="titulo-formulario">
+        <div class="login-cartao">
+            <h2 id="titulo-formulario">Acesso da equipe</h2>
+            <p>Entre com seu e-mail e senha para abrir o painel.</p>
+            <p th:if="${param.erro}" class="mensagem erro" role="alert">Confira o e-mail e a senha da equipe.</p>
+            <form th:action="@{/painel/entrar}" method="post" class="login-formulario">
+                <label>E-mail <input type="email" name="username" autocomplete="username" required></label>
+                <label>Senha <input type="password" name="password" autocomplete="current-password" required></label>
+                <button type="submit">Entrar no painel</button>
+            </form>
+        </div>
+    </section>
 </main>
 </body>
 </html>
