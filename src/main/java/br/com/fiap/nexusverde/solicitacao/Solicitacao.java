@@ -128,6 +128,7 @@ class Solicitacao {
         }
     }
 
+    Status status() { return status; }
     Long id() { return id; }
     Long dono() { return solicitante.getId(); }
 

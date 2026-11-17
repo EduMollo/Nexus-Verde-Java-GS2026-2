@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Pontos de água', 'pontos', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <section id="pontos" aria-labelledby="titulo-pontos">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-pontos">Pontos de água</h1>
+                <p>Gerencie o estoque e o cadastro dos locais de distribuição.</p>
+            </div>
+            <a class="botao" th:href="@{/painel/pontos-agua/novo}">Cadastrar ponto</a>
+        </div>
+        <form class="filtros" method="get" th:action="@{/painel/pontos-agua}">
+            <label>Busca
+                <input type="search" name="busca" th:value="${busca}" placeholder="Nome ou cidade">
+            </label>
+            <label>Status
+                <select name="status">
+                    <option value="">Todos os status</option>
+                    <option th:each="opcao : ${situacoes}" th:value="${opcao.name()}"
+                            th:text="${@painelFormato.rotulo(opcao)}" th:selected="${opcao == status}"></option>
+                </select>
+            </label>
+            <div class="filtros-acoes">
+                <button type="submit">Filtrar</button>
+                <a class="botao secundario" th:href="@{/painel/pontos-agua}">Limpar</a>
+            </div>
+        </form>
+        <p class="resultados" th:text="|${pontos.totalElements()} ponto(s) de água encontrado(s)|"></p>
+        <p th:if="${pontos.content().isEmpty()}" class="estado-vazio">Nenhum ponto de água corresponde aos filtros nesta página.</p>
+        <div class="grade">
+            <article class="cartao cartao-ponto" th:each="ponto : ${pontos.content()}">
+                <div class="cartao-cabecalho">
+                    <h2 th:text="${ponto.nome()}"></h2>
+                    <span class="estado" th:attr="data-estado=${ponto.status().name()}" th:text="${@painelFormato.rotulo(ponto.status())}"></span>
+                </div>
+                <p class="endereco-ponto" th:text="|${@painelFormato.rotulo(ponto.tipo())} · ${ponto.endereco()} · ${ponto.cidade()}|"></p>
+                <p class="endereco-ponto" th:if="${ponto.horarioFuncionamento() != null and !ponto.horarioFuncionamento().isBlank()}"
+                   th:text="${ponto.horarioFuncionamento()}"></p>
+                <div class="medicao medicao-estoque">
+                    <div class="medicao-rotulo">
+                        <span>Estoque atual</span>
+                        <strong th:text="|${ponto.estoqueLitros()} de ${ponto.capacidadeLitros()} L|"></strong>
+                    </div>
+                    <meter th:if="${ponto.capacidadeLitros() > 0}" min="0" th:max="${ponto.capacidadeLitros()}"
+                           th:value="${ponto.estoqueLitros()}" aria-label="Estoque em litros"></meter>
+                </div>
+                <div class="acoes">
+                    <a class="botao secundario" th:href="@{/painel/pontos-agua/{id}/editar(id=${ponto.id()})}">Editar cadastro</a>
+                    <details class="disponibilidade">
+                        <summary>Atualizar estoque e status</summary>
+                        <form method="post" th:action="@{/painel/pontos/{id}/disponibilidade(id=${ponto.id()})}">
+                            <label>Status
+                                <select name="status">
+                                    <option th:each="estado : ${situacoes}" th:value="${estado.name()}"
+                                            th:text="${@painelFormato.rotulo(estado)}" th:selected="${estado == ponto.status()}"></option>
+                                </select>
+                            </label>
+                            <label>Estoque (L)
+                                <input name="estoque" type="number" min="0" th:max="${ponto.capacidadeLitros()}"
+                                       th:value="${ponto.estoqueLitros()}" required>
+                            </label>
+                            <button type="submit">Salvar estoque e status</button>
+                        </form>
+                    </details>
+                </div>
+            </article>
+        </div>
+        <nav class="paginacao" th:if="${pontos.totalPages() > 1}" aria-label="Páginas de pontos">
+            <a th:if="${pontos.number() > 0}" th:href="@{/painel/pontos-agua(pagina=${pontos.number()-1},busca=${busca},status=${status})}">Anterior</a>
+            <span th:text="|Página ${pontos.number()+1} de ${pontos.totalPages()}|"></span>
+            <a th:if="${pontos.number()+1 < pontos.totalPages()}" th:href="@{/painel/pontos-agua(pagina=${pontos.number()+1},busca=${busca},status=${status})}">Próxima</a>
+        </nav>
+    </section>
+</div>
+</body>
+</html>

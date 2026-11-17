@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout(${pontoId == null ? 'Cadastrar ponto' : 'Editar ponto'}, 'pontos', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <nav class="voltar" aria-label="Voltar"><a th:href="@{/painel/pontos-agua}">← Pontos de água</a></nav>
+    <section aria-labelledby="titulo-formulario-ponto">
+        <div class="pagina-titulo">
+            <h1 id="titulo-formulario-ponto" th:text="${pontoId == null ? 'Cadastrar ponto de água' : 'Editar ponto de água'}"></h1>
+        </div>
+        <form class="cartao formulario-ponto" method="post" th:object="${dados}"
+              th:action="${pontoId == null} ? @{/painel/pontos-agua/novo} : @{/painel/pontos-agua/{id}/editar(id=${pontoId})}">
+            <ul class="mensagem erro erros-formulario" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}"></li>
+            </ul>
+            <input th:if="${pontoId != null}" type="hidden" name="versao" th:value="${versao}">
+            <input type="hidden" th:field="*{regiaoId}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('regiaoId')}" th:errors="*{regiaoId}"></p>
+            <fieldset>
+                <legend>Identificação e endereço</legend>
+                <label>Nome
+                    <input th:field="*{nome}" type="text" maxlength="120" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></span>
+                </label>
+                <label>Tipo de ponto
+                    <select th:field="*{tipo}" required>
+                        <option value="">Selecione um tipo</option>
+                        <option th:each="opcao : ${tipos}" th:value="${opcao.name()}" th:text="${@painelFormato.rotulo(opcao)}"></option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}"></span>
+                </label>
+                <label>Endereço
+                    <input th:field="*{endereco}" type="text" maxlength="240" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('endereco')}" th:errors="*{endereco}"></span>
+                </label>
+                <label>Cidade
+                    <input th:field="*{cidade}" type="text" maxlength="120" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('cidade')}" th:errors="*{cidade}"></span>
+                </label>
+                <label>Latitude (opcional)
+                    <input th:field="*{latitude}" type="number" min="-90" max="90" step="any">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('latitude')}" th:errors="*{latitude}"></span>
+                </label>
+                <label>Longitude (opcional)
+                    <input th:field="*{longitude}" type="number" min="-180" max="180" step="any">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('longitude')}" th:errors="*{longitude}"></span>
+                </label>
+            </fieldset>
+            <fieldset>
+                <legend>Disponibilidade</legend>
+                <label>Status
+                    <select th:field="*{status}" required>
+                        <option th:each="opcao : ${situacoes}" th:value="${opcao.name()}" th:text="${@painelFormato.rotulo(opcao)}"></option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></span>
+                </label>
+                <label>Horário de funcionamento (opcional)
+                    <input th:field="*{horarioFuncionamento}" type="text" maxlength="120">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('horarioFuncionamento')}" th:errors="*{horarioFuncionamento}"></span>
+                </label>
+                <label>Capacidade (L)
+                    <input th:field="*{capacidadeLitros}" type="number" min="0" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('capacidadeLitros')}" th:errors="*{capacidadeLitros}"></span>
+                </label>
+                <label>Estoque atual (L)
+                    <input th:field="*{estoqueLitros}" type="number" min="0" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('estoqueLitros')}" th:errors="*{estoqueLitros}"></span>
+                </label>
+                <label>Telefone (opcional)
+                    <input th:field="*{telefone}" type="tel" maxlength="32">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('telefone')}" th:errors="*{telefone}"></span>
+                </label>
+            </fieldset>
+            <div class="acoes">
+                <button type="submit">Salvar ponto</button>
+                <a class="botao secundario" th:href="@{/painel/pontos-agua}">Voltar aos pontos</a>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>

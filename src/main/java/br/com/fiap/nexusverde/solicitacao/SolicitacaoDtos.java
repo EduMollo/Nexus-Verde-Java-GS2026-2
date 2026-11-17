@@ -29,6 +29,8 @@ public final class SolicitacaoDtos {
                         Status status, Integer prioridade, String analiseIa, Solicitante solicitante,
                         Instant criadaEm, Instant atualizadaEm, Long regiaoId) {}
 
+    public record Movimentacao(Status statusAnterior, Status statusNovo, String motivo, Instant registradaEm) {}
+
     public record ContextoTriagem(long versao, Tipo tipo, Urgencia urgencia, int quantidadePessoas,
                                   boolean grupoVulneravel, int prioridade) {}
 }
