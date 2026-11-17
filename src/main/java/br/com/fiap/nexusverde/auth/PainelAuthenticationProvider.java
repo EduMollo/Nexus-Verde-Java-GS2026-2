@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 @Component
 class PainelAuthenticationProvider implements AuthenticationProvider {
     private final AuthService auth;
+    private final AcessoUsuarios acesso;
 
-    PainelAuthenticationProvider(AuthService auth) {
+    PainelAuthenticationProvider(AuthService auth, AcessoUsuarios acesso) {
         this.auth = auth;
+        this.acesso = acesso;
     }
 
     @Override
@@ -23,8 +25,11 @@ class PainelAuthenticationProvider implements AuthenticationProvider {
             if (usuario.getPapel() != Papel.EQUIPE) {
                 throw new BadCredentialsException("Acesso reservado à equipe.");
             }
-            return UsernamePasswordAuthenticationToken.authenticated(usuario.getId().toString(), null,
-                    AuthorityUtils.createAuthorityList("ROLE_EQUIPE"));
+            var autoridades = acesso.contaPrincipal(usuario)
+                    ? AuthorityUtils.createAuthorityList("ROLE_EQUIPE", AcessoUsuarios.AUTORIDADE)
+                    : AuthorityUtils.createAuthorityList("ROLE_EQUIPE");
+            return UsernamePasswordAuthenticationToken.authenticated(
+                    new IdentidadePainel(usuario.getId(), usuario.versaoAcesso()), null, autoridades);
         } catch (ApiException e) {
             throw new BadCredentialsException(e.getMessage());
         }

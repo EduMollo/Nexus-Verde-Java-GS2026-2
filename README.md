@@ -10,6 +10,8 @@ CitizenTech para ajudar moradores afetados por interrupções de abastecimento a
 
 O painel tem páginas próprias para [solicitações](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/solicitacoes) e [pontos de água](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/pontos-agua). A ficha de cada solicitação registra as novas mudanças de status e exige motivo no cancelamento pelo painel. A equipe pode buscar pedidos e cadastrar, editar ou atualizar o estoque dos pontos.
 
+A área **Usuários** fica disponível para a conta principal definida por `EQUIPE_EMAIL`. Ela permite cadastrar contas de equipe ou cidadão, localizar usuários e gerenciar a situação de suas contas. Desativar uma conta invalida a sessão do painel e os tokens da API emitidos anteriormente. Após a reativação, o usuário deve entrar novamente.
+
 Nos testes do Mobile, configure a URL base com o sufixo `/api`. A conta de avaliação do ambiente online é distribuída pela equipe.
 
 ## Executar

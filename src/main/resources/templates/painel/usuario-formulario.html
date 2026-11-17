@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Novo usuário', 'usuarios', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <nav class="voltar" aria-label="Voltar"><a th:href="@{/painel/usuarios}">← Usuários</a></nav>
+    <section aria-labelledby="titulo-formulario">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-formulario">Novo usuário</h1>
+                <p>O e-mail será usado para entrar na conta.</p>
+            </div>
+        </div>
+        <form class="cartao formulario-ponto" th:object="${dados}" th:action="@{/painel/usuarios/novo}" method="post">
+            <ul class="mensagem erro erros-formulario" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}"></li>
+            </ul>
+            <fieldset>
+                <legend>Identificação e contato</legend>
+                <label>Nome
+                    <input th:field="*{nome}" type="text" maxlength="120" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></span>
+                </label>
+                <label>E-mail
+                    <input th:field="*{email}" type="email" maxlength="254" autocomplete="off" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+                </label>
+                <label>Cidade (opcional)
+                    <input th:field="*{cidade}" type="text" maxlength="120">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('cidade')}" th:errors="*{cidade}"></span>
+                </label>
+                <label>Telefone (opcional)
+                    <input th:field="*{telefone}" type="tel" maxlength="32">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('telefone')}" th:errors="*{telefone}"></span>
+                </label>
+            </fieldset>
+            <fieldset>
+                <legend>Acesso</legend>
+                <label>Perfil
+                    <select th:field="*{papel}" required>
+                        <option value="CIDADAO">Cidadão</option>
+                        <option value="EQUIPE">Equipe</option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('papel')}" th:errors="*{papel}"></span>
+                </label>
+                <p id="senha-orientacao" class="regra-senha">Mínimo de 6 caracteres para cidadão e 12 para equipe.</p>
+                <label>Senha
+                    <input name="senha" type="password" autocomplete="new-password" minlength="6" maxlength="72" required aria-describedby="senha-orientacao">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('senha')}" th:errors="*{senha}"></span>
+                </label>
+                <label>Confirmar senha
+                    <input name="confirmacao" type="password" autocomplete="new-password" maxlength="72" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('confirmacao')}" th:errors="*{confirmacao}"></span>
+                </label>
+            </fieldset>
+            <div class="acoes">
+                <button type="submit">Cadastrar usuário</button>
+                <a class="botao secundario" th:href="@{/painel/usuarios}">Voltar à lista</a>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>

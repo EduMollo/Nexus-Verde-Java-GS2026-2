@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @SpringBootTest(properties = {
     "nexus.equipe-email=equipe-test@example.com",
@@ -80,7 +83,7 @@ class ApiMobileTest {
         mvc.perform(get("/painel").session(sessao))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Painel de abastecimento")))
-                .andExpect(content().string(containsString("/assets/painel.css?v=3")))
+                .andExpect(content().string(containsString("/assets/painel.css?v=4")))
                 .andExpect(content().string(containsString("/painel/solicitacoes")))
                 .andExpect(content().string(containsString("/painel/pontos-agua")));
         mvc.perform(get("/painel/solicitacoes").session(sessao)
@@ -249,6 +252,88 @@ class ApiMobileTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.estoqueLitros").value(700));
         mvc.perform(delete("/api/pontos-agua/{id}", ponto).header("Authorization", equipe))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void contaPrincipalGerenciaUsuariosERevogaSessoes() throws Exception {
+        var gestor = entrarNoPainel("equipe-test@example.com", "Equipe-Teste-2026");
+        var pagina = mvc.perform(get("/painel/usuarios").session(gestor))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Sua conta")))
+                .andExpect(content().string(containsString("Novo usuário"))).andReturn();
+        String csrf = csrfDaPagina(pagina);
+        mvc.perform(get("/painel/usuarios/novo").session(gestor))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Confirmar senha")));
+
+        String email = "operacao-teste@example.com";
+        String senha = "Operacao-Teste-2026";
+        mvc.perform(cadastroPainel(gestor, csrf, email, senha, "confirmacao-incorreta"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("As senhas não conferem.")))
+                .andExpect(content().string(not(containsString(senha))));
+        mvc.perform(cadastroPainel(gestor, csrf, email.toUpperCase(Locale.ROOT), senha, senha))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(cadastroPainel(gestor, csrf, email, senha, senha))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Este e-mail já está cadastrado.")));
+
+        MvcResult login = autenticarApi(email, senha).andExpect(status().isOk()).andReturn();
+        String tokenAntigo = token(login);
+        long id = corpo(login).path("usuario").path("id").asLong();
+        var equipe = entrarNoPainel(email, senha);
+        mvc.perform(get("/painel").session(equipe)).andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("href=\"/painel/usuarios\""))));
+        mvc.perform(get("/painel/usuarios").session(equipe)).andExpect(status().isForbidden());
+        mvc.perform(get("/painel/usuarios").session(gestor).param("busca", email)
+                        .param("papel", "EQUIPE").param("ativo", "true"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString(email)));
+        mvc.perform(get("/api/regioes").header("Authorization", tokenAntigo)).andExpect(status().isOk());
+
+        mvc.perform(post("/painel/usuarios/{id}/situacao", id).session(gestor).param("_csrf", csrf).param("ativo", "false"))
+                .andExpect(redirectedUrl("/painel/usuarios")).andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(get("/painel").session(equipe)).andExpect(redirectedUrl("/painel/entrar?expirada"));
+        autenticarApi(email, senha).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/regioes").header("Authorization", tokenAntigo)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/painel/usuarios").session(gestor).param("busca", email).param("ativo", "false"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Reativar")));
+
+        mvc.perform(post("/painel/usuarios/{id}/situacao", id).session(gestor).param("_csrf", csrf).param("ativo", "true"))
+                .andExpect(redirectedUrl("/painel/usuarios")).andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(get("/api/regioes").header("Authorization", tokenAntigo)).andExpect(status().isUnauthorized());
+        var loginNovo = autenticarApi(email, senha).andExpect(status().isOk()).andReturn();
+        mvc.perform(get("/api/regioes").header("Authorization", token(loginNovo))).andExpect(status().isOk());
+
+        long idGestor = corpo(autenticarApi("equipe-test@example.com", "Equipe-Teste-2026")
+                .andExpect(status().isOk()).andReturn()).path("usuario").path("id").asLong();
+        mvc.perform(post("/painel/usuarios/{id}/situacao", idGestor).session(gestor).param("_csrf", csrf).param("ativo", "false"))
+                .andExpect(redirectedUrl("/painel/usuarios")).andExpect(flash().attributeExists("erro"));
+    }
+
+    private MockHttpSession entrarNoPainel(String email, String senha) throws Exception {
+        var login = mvc.perform(get("/painel/entrar")).andExpect(status().isOk()).andReturn();
+        var sessao = (MockHttpSession) login.getRequest().getSession(false);
+        var entrou = mvc.perform(post("/painel/entrar").session(sessao).param("_csrf", csrfDaPagina(login))
+                        .param("username", email).param("password", senha))
+                .andExpect(redirectedUrl("/painel")).andReturn();
+        return (MockHttpSession) entrou.getRequest().getSession(false);
+    }
+
+    private static String csrfDaPagina(MvcResult pagina) throws Exception {
+        var token = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"")
+                .matcher(pagina.getResponse().getContentAsString());
+        assertThat(token.find()).isTrue();
+        return token.group(1);
+    }
+
+    private static MockHttpServletRequestBuilder cadastroPainel(
+            MockHttpSession gestor, String csrf, String email, String senha, String confirmacao) {
+        return post("/painel/usuarios/novo").session(gestor).param("_csrf", csrf)
+                .param("nome", "Operação de teste").param("email", email).param("papel", "EQUIPE")
+                .param("senha", senha).param("confirmacao", confirmacao);
+    }
+
+    private ResultActions autenticarApi(String email, String senha) throws Exception {
+        String dados = json.createObjectNode().put("email", email).put("senha", senha).toString();
+        return mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(dados));
     }
 
     private long criarPedido(String cidadao) throws Exception {

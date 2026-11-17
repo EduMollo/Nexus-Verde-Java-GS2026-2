@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Usuários', 'usuarios', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <section aria-labelledby="titulo-usuarios">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-usuarios">Usuários</h1>
+                <p>Gerencie as contas da equipe e dos cidadãos.</p>
+            </div>
+            <a class="botao" th:href="@{/painel/usuarios/novo}">Novo usuário</a>
+        </div>
+        <form class="filtros" method="get" th:action="@{/painel/usuarios}">
+            <label>Busca
+                <input type="search" name="busca" th:value="${busca}" placeholder="Nome ou e-mail">
+            </label>
+            <label>Perfil
+                <select name="papel">
+                    <option value="">Todos os perfis</option>
+                    <option value="CIDADAO" th:selected="${papel != null and papel.name() == 'CIDADAO'}">Cidadão</option>
+                    <option value="EQUIPE" th:selected="${papel != null and papel.name() == 'EQUIPE'}">Equipe</option>
+                </select>
+            </label>
+            <label>Situação
+                <select name="ativo">
+                    <option value="">Todas as situações</option>
+                    <option value="true" th:selected="${ativoFiltro == true}">Ativos</option>
+                    <option value="false" th:selected="${ativoFiltro == false}">Inativos</option>
+                </select>
+            </label>
+            <div class="filtros-acoes">
+                <button type="submit">Filtrar</button>
+                <a class="botao secundario" th:href="@{/painel/usuarios}">Limpar</a>
+            </div>
+        </form>
+        <p class="resultados" th:text="|${usuarios.totalElements()} usuário(s) encontrado(s)|"></p>
+        <p th:if="${usuarios.content().isEmpty()}" class="estado-vazio">Nenhum usuário corresponde aos filtros nesta página.</p>
+        <div class="tabela-usuarios" th:unless="${usuarios.content().isEmpty()}">
+            <table aria-labelledby="titulo-usuarios">
+                <thead>
+                    <tr><th scope="col">Usuário</th><th scope="col">Perfil</th><th scope="col">Cidade</th><th scope="col">Situação</th><th scope="col">Ações</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="usuario : ${usuarios.content()}">
+                        <td class="usuario-nome">
+                            <strong th:text="${usuario.nome()}"></strong>
+                            <span th:text="${usuario.email()}"></span>
+                        </td>
+                        <td th:text="${usuario.papel().name() == 'EQUIPE'} ? 'Equipe' : 'Cidadão'"></td>
+                        <td th:text="${usuario.cidade() == null or usuario.cidade().isBlank()} ? '—' : ${usuario.cidade()}"></td>
+                        <td><span class="estado" th:attr="data-estado=${usuario.ativo()} ? 'DISPONIVEL' : 'INATIVO'"
+                                  th:text="${usuario.ativo()} ? 'Ativo' : 'Inativo'"></span></td>
+                        <td>
+                            <span th:if="${usuario.id() == idGestor}" class="usuario-proprio">Sua conta</span>
+                            <form th:unless="${usuario.id() == idGestor}" th:action="@{/painel/usuarios/{id}/situacao(id=${usuario.id()})}" method="post">
+                                <button type="submit" class="secundario" name="ativo" th:value="${!usuario.ativo()}"
+                                        th:attr="aria-label=|${usuario.ativo() ? 'Desativar' : 'Reativar'} ${usuario.nome()}|"
+                                        th:text="${usuario.ativo()} ? 'Desativar' : 'Reativar'"></button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <nav class="paginacao" th:if="${usuarios.totalPages() > 1}" aria-label="Páginas de usuários">
+            <a th:if="${usuarios.number() > 0}"
+               th:href="@{/painel/usuarios(pagina=${usuarios.number()-1},busca=${busca},papel=${papel},ativo=${ativoFiltro})}">Anterior</a>
+            <span th:text="|Página ${usuarios.number()+1} de ${usuarios.totalPages()}|"></span>
+            <a th:if="${usuarios.number()+1 < usuarios.totalPages()}"
+               th:href="@{/painel/usuarios(pagina=${usuarios.number()+1},busca=${busca},papel=${papel},ativo=${ativoFiltro})}">Próxima</a>
+        </nav>
+    </section>
+</div>
+</body>
+</html>

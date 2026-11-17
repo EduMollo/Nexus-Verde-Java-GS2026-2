@@ -23,12 +23,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -57,10 +60,30 @@ class SecurityConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey key) {
+    JwtDecoder jwtDecoder(SecretKey key, UsuarioRepository usuarios) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(AuthService.EMISSOR));
+        var validade = JwtValidators.createDefaultWithIssuer(AuthService.EMISSOR);
+        decoder.setJwtValidator(token -> {
+            var resultado = validade.validate(token);
+            if (resultado.hasErrors()) {
+                return resultado;
+            }
+            if (sessaoValida(token, usuarios)) {
+                return OAuth2TokenValidatorResult.success();
+            }
+            return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "Sessão encerrada.", null));
+        });
         return decoder;
+    }
+
+    private static boolean sessaoValida(Jwt token, UsuarioRepository usuarios) {
+        try {
+            String versao = token.getClaimAsString("versaoAcesso");
+            return usuarios.existsByIdAndAtivoTrueAndVersaoAcesso(Long.parseLong(token.getSubject()),
+                    versao == null ? 0 : Long.parseLong(versao));
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     @Bean
@@ -99,10 +122,12 @@ class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain painel(HttpSecurity http) throws Exception {
-        return http.authorizeHttpRequests(auth -> auth
+    SecurityFilterChain painel(HttpSecurity http, UsuarioRepository usuarios) throws Exception {
+        return http.addFilterBefore(new SessaoPainelFilter(usuarios), AuthorizationFilter.class)
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/painel/entrar", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/actuator/health", "/assets/**", "/error").permitAll()
+                        .requestMatchers("/painel/usuarios", "/painel/usuarios/**").hasAuthority(AcessoUsuarios.AUTORIDADE)
                         .requestMatchers("/painel", "/painel/**").hasRole("EQUIPE")
                         .anyRequest().denyAll())
                 .formLogin(form -> form
