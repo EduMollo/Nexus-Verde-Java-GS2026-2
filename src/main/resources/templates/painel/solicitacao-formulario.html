@@ -83,9 +83,9 @@
                 </details>
             </fieldset>
             <div class="acoes">
-                <button type="submit" th:text="${pedidoId == null ? 'Cadastrar solicitação' : 'Salvar alterações'}"></button>
-                <a class="botao secundario" th:if="${pedidoId == null}" th:href="@{/painel/solicitacoes}">Cancelar</a>
-                <a class="botao secundario" th:if="${pedidoId != null}" th:href="@{/painel/solicitacoes/{id}(id=${pedidoId})}">Cancelar</a>
+                <button class="botao-salvar" type="submit" th:text="${pedidoId == null ? 'Cadastrar solicitação' : 'Salvar alterações'}"></button>
+                <a class="botao botao-discreto" th:if="${pedidoId == null}" th:href="@{/painel/solicitacoes}">Cancelar</a>
+                <a class="botao botao-discreto" th:if="${pedidoId != null}" th:href="@{/painel/solicitacoes/{id}(id=${pedidoId})}">Cancelar</a>
             </div>
         </form>
     </section>

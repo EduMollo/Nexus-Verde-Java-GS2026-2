@@ -12,7 +12,7 @@
             </div>
             <div class="acoes-titulo">
                 <span class="estado" th:attr="data-estado=${pedido.status().name()}" th:text="${@painelFormato.rotulo(pedido.status())}"></span>
-                <a class="botao secundario" th:if="${pedido.status().name() == 'ABERTA'}"
+                <a class="botao secundario botao-editar" th:if="${pedido.status().name() == 'ABERTA'}"
                    th:href="@{/painel/solicitacoes/{id}/editar(id=${pedido.id()})}">Editar solicitação</a>
             </div>
         </div>
@@ -37,11 +37,11 @@
                 </div>
                 <div class="acoes" th:if="${ativoPedido}">
                     <form method="post" th:action="@{/painel/pedidos/{id}/status(id=${pedido.id()})}">
-                        <button type="submit" name="status" th:if="${pedido.status().name() == 'ABERTA'}" value="EM_ATENDIMENTO">Iniciar atendimento</button>
-                        <button type="submit" name="status" th:if="${pedido.status().name() == 'EM_ATENDIMENTO'}" value="ATENDIDA">Marcar atendida</button>
+                        <button class="botao-iniciar" type="submit" name="status" th:if="${pedido.status().name() == 'ABERTA'}" value="EM_ATENDIMENTO">Iniciar atendimento</button>
+                        <button class="botao-salvar" type="submit" name="status" th:if="${pedido.status().name() == 'EM_ATENDIMENTO'}" value="ATENDIDA">Marcar atendida</button>
                     </form>
                     <form th:if="${iaDisponivel}" method="post" th:action="@{/painel/pedidos/{id}/analise(id=${pedido.id()})}">
-                        <button class="secundario" type="submit">Gerar análise por IA</button>
+                        <button class="secundario botao-ia" type="submit">Gerar análise por IA</button>
                     </form>
                 </div>
                 <p class="mensagem aviso" th:if="${ativoPedido and !iaDisponivel}">Análise por IA indisponível. Você pode continuar o atendimento.</p>

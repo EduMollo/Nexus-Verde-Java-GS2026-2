@@ -10,7 +10,7 @@
                 <h1 id="titulo-registro">Nova solicitação</h1>
                 <p>Selecione o cidadão para quem você está registrando o pedido.</p>
             </div>
-            <a class="botao secundario" th:if="${@acessoUsuarios.podeGerenciar()}"
+            <a class="botao secundario botao-adicionar" th:if="${@acessoUsuarios.podeGerenciar()}"
                th:href="@{/painel/usuarios/novo(paraSolicitacao=true)}">Cadastrar cidadão</a>
         </div>
         <ol class="etapas-registro" aria-label="Etapas do cadastro">
@@ -23,7 +23,7 @@
             </label>
             <div class="filtros-acoes">
                 <button type="submit">Buscar</button>
-                <a class="botao secundario" th:href="@{/painel/solicitacoes/nova}">Limpar</a>
+                <a class="botao botao-discreto" th:href="@{/painel/solicitacoes/nova}">Limpar</a>
             </div>
         </form>
         <p class="estado-vazio" th:if="${cidadaos.content().isEmpty()}">Nenhum cidadão ativo corresponde à busca.</p>
@@ -34,7 +34,7 @@
                         <strong th:text="${cidadao.nome()}"></strong>
                         <small th:text="|Conta #${cidadao.id()}${cidadao.cidade() == null or cidadao.cidade().isBlank() ? '' : ' · ' + cidadao.cidade()}|"></small>
                     </div>
-                    <a class="botao secundario" th:href="@{/painel/solicitacoes/nova/{id}(id=${cidadao.id()})}"
+                    <a class="botao secundario botao-seta" th:href="@{/painel/solicitacoes/nova/{id}(id=${cidadao.id()})}"
                        th:attr="aria-label=|Selecionar ${cidadao.nome()}|">Selecionar</a>
                 </li>
             </ul>
