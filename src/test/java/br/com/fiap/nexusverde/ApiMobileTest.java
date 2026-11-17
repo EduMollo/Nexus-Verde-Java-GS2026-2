@@ -86,7 +86,7 @@ class ApiMobileTest {
         mvc.perform(get("/painel").session(sessao))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Painel de abastecimento")))
-                .andExpect(content().string(containsString("/assets/painel.css?v=5")))
+                .andExpect(content().string(containsString("/assets/painel.css?v=6")))
                 .andExpect(content().string(containsString("/painel/solicitacoes")))
                 .andExpect(content().string(containsString("/painel/pontos-agua")));
         mvc.perform(get("/painel/solicitacoes").session(sessao)

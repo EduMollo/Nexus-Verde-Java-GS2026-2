@@ -58,9 +58,9 @@
                 </label>
             </fieldset>
             <div class="acoes">
-                <button type="submit" th:text="${paraSolicitacao ? 'Cadastrar e continuar' : 'Cadastrar usuário'}"></button>
-                <a class="botao secundario" th:if="${paraSolicitacao}" th:href="@{/painel/solicitacoes/nova}">Cancelar</a>
-                <a class="botao secundario" th:unless="${paraSolicitacao}" th:href="@{/painel/usuarios}">Voltar à lista</a>
+                <button class="botao-salvar" type="submit" th:text="${paraSolicitacao ? 'Cadastrar e continuar' : 'Cadastrar usuário'}"></button>
+                <a class="botao botao-discreto" th:if="${paraSolicitacao}" th:href="@{/painel/solicitacoes/nova}">Cancelar</a>
+                <a class="botao botao-discreto" th:unless="${paraSolicitacao}" th:href="@{/painel/usuarios}">Voltar à lista</a>
             </div>
         </form>
     </section>

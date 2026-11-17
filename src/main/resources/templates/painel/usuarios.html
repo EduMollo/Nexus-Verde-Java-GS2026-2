@@ -9,7 +9,7 @@
                 <h1 id="titulo-usuarios">Usuários</h1>
                 <p>Gerencie as contas da equipe e dos cidadãos.</p>
             </div>
-            <a class="botao" th:href="@{/painel/usuarios/novo}">Novo usuário</a>
+            <a class="botao botao-adicionar" th:href="@{/painel/usuarios/novo}">Novo usuário</a>
         </div>
         <form class="filtros" method="get" th:action="@{/painel/usuarios}">
             <label>Busca
@@ -30,8 +30,8 @@
                 </select>
             </label>
             <div class="filtros-acoes">
-                <button type="submit">Filtrar</button>
-                <a class="botao secundario" th:href="@{/painel/usuarios}">Limpar</a>
+                <button class="botao-filtrar" type="submit">Filtrar</button>
+                <a class="botao botao-discreto" th:href="@{/painel/usuarios}">Limpar</a>
             </div>
         </form>
         <p class="resultados" th:text="|${usuarios.totalElements()} usuário(s) encontrado(s)|"></p>

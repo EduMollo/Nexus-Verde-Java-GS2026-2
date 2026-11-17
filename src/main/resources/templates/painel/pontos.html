@@ -9,7 +9,7 @@
                 <h1 id="titulo-pontos">Pontos de água</h1>
                 <p>Gerencie o estoque e o cadastro dos locais de distribuição.</p>
             </div>
-            <a class="botao" th:href="@{/painel/pontos-agua/novo}">Cadastrar ponto</a>
+            <a class="botao botao-adicionar" th:href="@{/painel/pontos-agua/novo}">Cadastrar ponto</a>
         </div>
         <form class="filtros" method="get" th:action="@{/painel/pontos-agua}">
             <label>Busca
@@ -23,8 +23,8 @@
                 </select>
             </label>
             <div class="filtros-acoes">
-                <button type="submit">Filtrar</button>
-                <a class="botao secundario" th:href="@{/painel/pontos-agua}">Limpar</a>
+                <button class="botao-filtrar" type="submit">Filtrar</button>
+                <a class="botao botao-discreto" th:href="@{/painel/pontos-agua}">Limpar</a>
             </div>
         </form>
         <p class="resultados" th:text="|${pontos.totalElements()} ponto(s) de água encontrado(s)|"></p>
@@ -47,7 +47,7 @@
                            th:value="${ponto.estoqueLitros()}" aria-label="Estoque em litros"></meter>
                 </div>
                 <div class="acoes">
-                    <a class="botao secundario" th:href="@{/painel/pontos-agua/{id}/editar(id=${ponto.id()})}">Editar cadastro</a>
+                    <a class="botao secundario botao-editar" th:href="@{/painel/pontos-agua/{id}/editar(id=${ponto.id()})}">Editar cadastro</a>
                     <details class="disponibilidade">
                         <summary>Atualizar estoque e status</summary>
                         <form method="post" th:action="@{/painel/pontos/{id}/disponibilidade(id=${ponto.id()})}">
@@ -61,7 +61,7 @@
                                 <input name="estoque" type="number" min="0" th:max="${ponto.capacidadeLitros()}"
                                        th:value="${ponto.estoqueLitros()}" required>
                             </label>
-                            <button type="submit">Salvar estoque e status</button>
+                            <button class="botao-salvar" type="submit">Salvar estoque e status</button>
                         </form>
                     </details>
                 </div>
