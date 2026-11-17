@@ -7,12 +7,13 @@
         <div class="pagina-titulo">
             <div>
                 <h1 id="titulo-solicitacoes">Solicitações</h1>
-                <p>Encontre pedidos por cidade, status ou urgência.</p>
+                <p>Consulte e registre pedidos de abastecimento.</p>
             </div>
+            <a class="botao" th:href="@{/painel/solicitacoes/nova}">Nova solicitação</a>
         </div>
         <form class="filtros" method="get" th:action="@{/painel/solicitacoes}">
             <label>Busca
-                <input type="search" name="busca" th:value="${busca}" placeholder="Cidade ou descrição">
+                <input type="search" name="busca" th:value="${busca}" placeholder="Protocolo, solicitante, cidade ou descrição">
             </label>
             <label>Status
                 <select name="status">
@@ -46,6 +47,7 @@
                     <strong class="urgencia" th:attr="data-urgencia=${pedido.urgencia().name()}"
                             th:text="${@painelFormato.rotulo(pedido.urgencia())}"></strong>
                 </div>
+                <span class="registro-dados" th:text="|Solicitante · ${pedido.solicitante().nome()}|"></span>
                 <p class="descricao descricao-curta" th:text="${pedido.descricao()}"></p>
                 <div class="medicao" th:if="${pedido.prioridade() != null}">
                     <div class="medicao-rotulo"><span>Prioridade</span><strong th:text="|${pedido.prioridade()}/100|"></strong></div>

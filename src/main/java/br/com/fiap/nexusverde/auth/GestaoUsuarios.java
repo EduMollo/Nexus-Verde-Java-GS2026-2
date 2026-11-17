@@ -43,7 +43,7 @@ class GestaoUsuarios {
         return Pagina.de(usuarios.findAll(filtros, pagina).map(Resumo::de));
     }
 
-    void cadastrar(CadastroUsuario dados) {
+    long cadastrar(CadastroUsuario dados) {
         exigirGestor();
         if (!dados.senha().equals(dados.confirmacao())) {
             throw ApiException.invalido("As senhas não conferem.");
@@ -51,7 +51,7 @@ class GestaoUsuarios {
         if (dados.papel() == Papel.EQUIPE && dados.senha().length() < 12) {
             throw ApiException.invalido("A senha para a equipe precisa ter pelo menos 12 caracteres.");
         }
-        auth.criar(dados.dados(), dados.papel());
+        return auth.criar(dados.dados(), dados.papel()).getId();
     }
 
     @Transactional

@@ -31,7 +31,10 @@
                 <h2 id="titulo-prioritarios">Solicitações prioritárias</h2>
                 <p th:text="|${triagem} pedido(s) aberto(s) recebido(s) pela fila de triagem|"></p>
             </div>
-            <a class="botao secundario" th:href="@{/painel/solicitacoes}">Ver todas as solicitações</a>
+            <div class="acoes-titulo">
+                <a class="botao secundario" th:href="@{/painel/solicitacoes}">Ver todas as solicitações</a>
+                <a class="botao" th:href="@{/painel/solicitacoes/nova}">Nova solicitação</a>
+            </div>
         </div>
         <p th:if="${prioritarios.isEmpty()}" class="estado-vazio">Nenhuma solicitação aberta.</p>
         <ul th:unless="${prioritarios.isEmpty()}" class="lista-registros">

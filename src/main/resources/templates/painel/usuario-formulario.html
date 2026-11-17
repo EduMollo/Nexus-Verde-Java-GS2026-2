@@ -3,11 +3,14 @@
       th:replace="~{painel/layout :: layout('Novo usuário', 'usuarios', ~{::conteudo})}">
 <body>
 <div th:fragment="conteudo">
-    <nav class="voltar" aria-label="Voltar"><a th:href="@{/painel/usuarios}">← Usuários</a></nav>
+    <nav class="voltar" aria-label="Voltar">
+        <a th:if="${paraSolicitacao}" th:href="@{/painel/solicitacoes/nova}">← Nova solicitação</a>
+        <a th:unless="${paraSolicitacao}" th:href="@{/painel/usuarios}">← Usuários</a>
+    </nav>
     <section aria-labelledby="titulo-formulario">
         <div class="pagina-titulo">
             <div>
-                <h1 id="titulo-formulario">Novo usuário</h1>
+                <h1 id="titulo-formulario" th:text="${paraSolicitacao ? 'Cadastrar cidadão' : 'Novo usuário'}"></h1>
                 <p>O e-mail será usado para entrar na conta.</p>
             </div>
         </div>
@@ -15,6 +18,7 @@
             <ul class="mensagem erro erros-formulario" role="alert" th:if="${#fields.hasGlobalErrors()}">
                 <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}"></li>
             </ul>
+            <input th:if="${paraSolicitacao}" type="hidden" name="paraSolicitacao" value="true">
             <fieldset>
                 <legend>Identificação e contato</legend>
                 <label>Nome
@@ -39,7 +43,7 @@
                 <label>Perfil
                     <select th:field="*{papel}" required>
                         <option value="CIDADAO">Cidadão</option>
-                        <option value="EQUIPE">Equipe</option>
+                        <option th:unless="${paraSolicitacao}" value="EQUIPE">Equipe</option>
                     </select>
                     <span class="erro-campo" th:if="${#fields.hasErrors('papel')}" th:errors="*{papel}"></span>
                 </label>
@@ -54,8 +58,9 @@
                 </label>
             </fieldset>
             <div class="acoes">
-                <button type="submit">Cadastrar usuário</button>
-                <a class="botao secundario" th:href="@{/painel/usuarios}">Voltar à lista</a>
+                <button type="submit" th:text="${paraSolicitacao ? 'Cadastrar e continuar' : 'Cadastrar usuário'}"></button>
+                <a class="botao secundario" th:if="${paraSolicitacao}" th:href="@{/painel/solicitacoes/nova}">Cancelar</a>
+                <a class="botao secundario" th:unless="${paraSolicitacao}" th:href="@{/painel/usuarios}">Voltar à lista</a>
             </div>
         </form>
     </section>

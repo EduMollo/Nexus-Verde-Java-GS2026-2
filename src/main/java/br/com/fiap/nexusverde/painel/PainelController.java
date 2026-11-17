@@ -79,7 +79,9 @@ class PainelController {
     @GetMapping("/solicitacoes/{id}")
     String solicitacao(Principal principal, @PathVariable Long id, Model model) {
         Ator equipe = ator(principal);
-        model.addAttribute("pedido", pedidos.detalhe(equipe, id));
+        var detalhe = pedidos.detalhePainel(equipe, id);
+        model.addAttribute("pedido", detalhe.pedido());
+        model.addAttribute("cadastradaPor", detalhe.cadastradaPor());
         model.addAttribute("historico", pedidos.historico(equipe, id));
         model.addAttribute("iaDisponivel", ia.disponivel());
         return "painel/solicitacao";
@@ -166,7 +168,7 @@ class PainelController {
         return "painel/ponto-formulario";
     }
 
-    private static Ator ator(Principal principal) {
+    static Ator ator(Principal principal) {
         return new Ator(Long.parseLong(principal.getName()), Papel.EQUIPE);
     }
 

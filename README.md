@@ -12,6 +12,8 @@ O painel tem páginas próprias para [solicitações](https://nexus-verde-java-g
 
 A área **Usuários** fica disponível para a conta principal definida por `EQUIPE_EMAIL`. Ela permite cadastrar contas de equipe ou cidadão, localizar usuários e gerenciar a situação de suas contas. Desativar uma conta invalida a sessão do painel e os tokens da API emitidos anteriormente. Após a reativação, o usuário deve entrar novamente.
 
+A equipe também pode abrir solicitações pelo painel. Em **Nova solicitação**, selecione um cidadão ativo e preencha a situação e o endereço. A conta principal pode cadastrar um cidadão e seguir direto para o pedido. A solicitação aparece para o cidadão no app, recebe um protocolo e pode ser corrigida pela equipe enquanto estiver aberta.
+
 Nos testes do Mobile, configure a URL base com o sufixo `/api`. A conta de avaliação do ambiente online é distribuída pela equipe.
 
 ## Executar

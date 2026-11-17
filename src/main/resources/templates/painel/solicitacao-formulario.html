@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout(${pedidoId == null ? 'Nova solicitação' : 'Editar solicitação'}, 'solicitacoes', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <nav class="voltar" aria-label="Voltar">
+        <a th:if="${pedidoId == null}" th:href="@{/painel/solicitacoes/nova}">← Escolher outro cidadão</a>
+        <a th:unless="${pedidoId == null}" th:href="@{/painel/solicitacoes/{id}(id=${pedidoId})}">← Voltar à ficha</a>
+    </nav>
+    <section aria-labelledby="titulo-formulario">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-formulario" th:text="${pedidoId == null ? 'Nova solicitação' : 'Editar solicitação #' + pedidoId}"></h1>
+                <p>Solicitante <strong th:text="${solicitante}"></strong></p>
+            </div>
+        </div>
+        <ol class="etapas-registro" aria-label="Etapas do cadastro" th:if="${pedidoId == null}">
+            <li><a th:href="@{/painel/solicitacoes/nova}">Solicitante</a></li>
+            <li aria-current="step">Dados do pedido</li>
+        </ol>
+        <form class="cartao formulario-ponto" method="post" th:object="${dados}"
+              th:action="${pedidoId == null} ? @{/painel/solicitacoes/nova/{id}(id=${cidadaoId})} : @{/painel/solicitacoes/{id}/editar(id=${pedidoId})}">
+            <ul class="mensagem erro erros-formulario" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}"></li>
+            </ul>
+            <input th:if="${pedidoId == null}" type="hidden" name="registro" th:value="${registro}">
+            <input th:if="${pedidoId != null}" type="hidden" name="versao" th:value="${versao}">
+            <fieldset>
+                <legend>Situação do pedido</legend>
+                <label>Tipo de solicitação
+                    <select th:field="*{tipo}" required>
+                        <option value="">Selecione</option>
+                        <option th:each="opcao : ${tipos}" th:value="${opcao.name()}" th:text="${@painelFormato.rotulo(opcao)}"></option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}"></span>
+                </label>
+                <label>Urgência
+                    <select th:field="*{urgencia}" required>
+                        <option value="">Selecione</option>
+                        <option th:each="opcao : ${urgencias}" th:value="${opcao.name()}" th:text="${@painelFormato.rotulo(opcao)}"></option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('urgencia')}" th:errors="*{urgencia}"></span>
+                </label>
+                <label>Pessoas afetadas
+                    <input th:field="*{quantidadePessoas}" type="number" min="1" max="2147483647" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('quantidadePessoas')}" th:errors="*{quantidadePessoas}"></span>
+                </label>
+                <label>Há pessoas em situação de vulnerabilidade?
+                    <select th:field="*{grupoVulneravel}" required>
+                        <option value="">Selecione</option>
+                        <option value="true">Sim</option>
+                        <option value="false">Não</option>
+                    </select>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('grupoVulneravel')}" th:errors="*{grupoVulneravel}"></span>
+                </label>
+                <label class="campo-largo">Descrição
+                    <textarea th:field="*{descricao}" rows="4" maxlength="1000" required></textarea>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('descricao')}" th:errors="*{descricao}"></span>
+                </label>
+            </fieldset>
+            <fieldset>
+                <legend>Local do atendimento</legend>
+                <label>Cidade
+                    <input th:field="*{cidade}" type="text" maxlength="120" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('cidade')}" th:errors="*{cidade}"></span>
+                </label>
+                <label>Endereço
+                    <input th:field="*{endereco}" type="text" maxlength="240" required>
+                    <span class="erro-campo" th:if="${#fields.hasErrors('endereco')}" th:errors="*{endereco}"></span>
+                </label>
+                <details class="coordenadas campo-largo" th:open="${dados.latitude() != null or dados.longitude() != null or #fields.hasErrors('latitude') or #fields.hasErrors('longitude')}">
+                    <summary>Coordenadas (opcional)</summary>
+                    <div class="campos-coordenadas">
+                <label>Latitude
+                    <input th:field="*{latitude}" type="number" min="-90" max="90" step="any">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('latitude')}" th:errors="*{latitude}"></span>
+                </label>
+                <label>Longitude
+                    <input th:field="*{longitude}" type="number" min="-180" max="180" step="any">
+                    <span class="erro-campo" th:if="${#fields.hasErrors('longitude')}" th:errors="*{longitude}"></span>
+                </label>
+                    </div>
+                </details>
+            </fieldset>
+            <div class="acoes">
+                <button type="submit" th:text="${pedidoId == null ? 'Cadastrar solicitação' : 'Salvar alterações'}"></button>
+                <a class="botao secundario" th:if="${pedidoId == null}" th:href="@{/painel/solicitacoes}">Cancelar</a>
+                <a class="botao secundario" th:if="${pedidoId != null}" th:href="@{/painel/solicitacoes/{id}(id=${pedidoId})}">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>
