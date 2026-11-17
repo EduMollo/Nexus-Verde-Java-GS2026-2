@@ -439,6 +439,53 @@ class ApiMobileTest {
         return campo.group(1);
     }
 
+    @Test
+    void inicioRedirecionaELoginRecuperaFormularioSemSessao() throws Exception {
+        mvc.perform(get("/")).andExpect(redirectedUrl("/painel"));
+        mvc.perform(get("/error").accept(MediaType.TEXT_HTML)
+                        .requestAttr(jakarta.servlet.RequestDispatcher.ERROR_STATUS_CODE, 403))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(containsString("Acesso restrito")))
+                .andExpect(content().string(not(containsString("Whitelabel Error Page"))));
+        var pagina = mvc.perform(get("/painel/entrar")).andExpect(status().isOk()).andReturn();
+        String antigoCsrf = csrfDaPagina(pagina);
+        mvc.perform(post("/painel/entrar").accept(MediaType.TEXT_HTML)
+                        .param("_csrf", antigoCsrf).param("username", "equipe-test@example.com")
+                        .param("password", "Equipe-Teste-2026"))
+                .andExpect(redirectedUrl("/painel/entrar?expirada"));
+        var novaPagina = mvc.perform(get("/painel/entrar").param("expirada", ""))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("O formulário expirou ou sua sessão foi encerrada.")))
+                .andReturn();
+        var sessao = (MockHttpSession) novaPagina.getRequest().getSession(false);
+        var entrou = mvc.perform(post("/painel/entrar").session(sessao)
+                        .param("_csrf", csrfDaPagina(novaPagina)).param("username", "equipe-test@example.com")
+                        .param("password", "Equipe-Teste-2026"))
+                .andExpect(redirectedUrl("/painel")).andReturn();
+        mvc.perform(get("/").session((MockHttpSession) entrou.getRequest().getSession(false)))
+                .andExpect(redirectedUrl("/painel"));
+    }
+
+    @Test
+    void formularioDesatualizadoNaoExecutaAcaoEOrientaRecuperacao() throws Exception {
+        String cidadao = cadastrar("csrf-painel@example.com");
+        long id = criarPedido(cidadao);
+        var sessao = entrarNoPainel("equipe-test@example.com", "Equipe-Teste-2026");
+        mvc.perform(post("/painel/pedidos/{id}/status", id).session(sessao).param("_csrf", "antigo")
+                        .param("status", "EM_ATENDIMENTO"))
+                .andExpect(redirectedUrl("/painel?formularioExpirado"));
+        mvc.perform(get("/painel").session(sessao).param("formularioExpirado", ""))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("A ação não foi executada.")));
+        mvc.perform(get("/api/solicitacoes/{id}", id).header("Authorization", cidadao))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ABERTA"));
+        mvc.perform(post("/painel/pedidos/{id}/status", id).param("_csrf", "antigo")
+                        .param("status", "EM_ATENDIMENTO"))
+                .andExpect(redirectedUrl("/painel/entrar?expirada"));
+        mvc.perform(get("/api/solicitacoes/{id}", id).header("Authorization", cidadao))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ABERTA"));
+    }
+
     private long criarPedido(String cidadao) throws Exception {
         return corpo(mvc.perform(post("/api/solicitacoes").header("Authorization", cidadao)
                         .contentType(MediaType.APPLICATION_JSON).content(PEDIDO))

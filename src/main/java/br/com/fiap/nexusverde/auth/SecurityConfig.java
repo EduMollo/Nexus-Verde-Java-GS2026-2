@@ -125,11 +125,13 @@ class SecurityConfig {
     SecurityFilterChain painel(HttpSecurity http, UsuarioRepository usuarios) throws Exception {
         return http.addFilterBefore(new SessaoPainelFilter(usuarios), AuthorizationFilter.class)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers("/painel/entrar", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/actuator/health", "/assets/**", "/error").permitAll()
                         .requestMatchers("/painel/usuarios", "/painel/usuarios/**").hasAuthority(AcessoUsuarios.AUTORIDADE)
                         .requestMatchers("/painel", "/painel/**").hasRole("EQUIPE")
                         .anyRequest().denyAll())
+                .exceptionHandling(errors -> errors.accessDeniedHandler(new PainelAcessoNegadoHandler()))
                 .formLogin(form -> form
                         .loginPage("/painel/entrar").loginProcessingUrl("/painel/entrar")
                         .failureUrl("/painel/entrar?erro")
