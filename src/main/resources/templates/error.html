@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102f29">
+    <title>Acesso à página · Nexus Verde</title>
+    <link rel="stylesheet" th:href="@{/assets/painel.css(v=6)}">
+</head>
+<body class="login">
+<main class="login-pagina">
+    <section class="login-apresentacao" aria-labelledby="titulo-nexus">
+        <div class="ondas" aria-hidden="true"></div>
+        <div class="marca">
+            <span class="marca-simbolo" aria-hidden="true"></span>
+            <span id="titulo-nexus">Nexus Verde</span>
+        </div>
+    </section>
+    <section class="login-acesso" aria-labelledby="titulo-erro">
+        <div class="login-cartao" th:switch="${status}">
+            <div th:case="403">
+                <h1 id="titulo-erro">Acesso restrito</h1>
+                <p>Sua conta não tem permissão para acessar esta página.</p>
+            </div>
+            <div th:case="404">
+                <h1 id="titulo-erro">Página não encontrada</h1>
+                <p>Confira o endereço ou continue pelo painel.</p>
+            </div>
+            <div th:case="*">
+                <h1 id="titulo-erro">Não foi possível abrir esta página</h1>
+                <p>Tente novamente em alguns instantes. Se o problema continuar, informe à equipe o horário e a ação que tentou realizar.</p>
+            </div>
+            <nav class="login-formulario" aria-label="Continuar no Nexus Verde">
+                <a class="botao" th:href="@{/painel}">Voltar ao painel</a>
+                <a class="botao secundario" th:href="@{/painel/entrar}">Ir para o login</a>
+            </nav>
+        </div>
+    </section>
+</main>
+</body>
+</html>
