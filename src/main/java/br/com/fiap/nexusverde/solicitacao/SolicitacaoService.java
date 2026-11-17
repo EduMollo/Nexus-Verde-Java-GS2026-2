@@ -148,21 +148,27 @@ public class SolicitacaoService {
 
     @Transactional
     public void editarNoPainel(Ator ator, long id, long versao, Entrada dados) {
-        DetalhePainel atual = detalheParaEdicao(ator, id);
+        Solicitacao pedido = encontrarAbertaNoPainel(ator, id);
+        DetalhePainel atual = pedido.detalhePainel();
         if (atual.versao() != versao) {
             throw ApiException.conflito("O pedido mudou. Abra a edição novamente para conferir os dados.");
         }
         Long regiao = atual.pedido().cidade().equalsIgnoreCase(dados.cidade().strip())
                 ? atual.pedido().regiaoId() : null;
-        encontrar(id).editar(dados, catalogo.resolverRegiao(regiao, dados.cidade()));
+        pedido.editar(dados, catalogo.resolverRegiao(regiao, dados.cidade()));
     }
 
     public DetalhePainel detalheParaEdicao(Ator ator, long id) {
-        var detalhe = detalhePainel(ator, id);
-        if (detalhe.pedido().status() != Status.ABERTA) {
+        return encontrarAbertaNoPainel(ator, id).detalhePainel();
+    }
+
+    private Solicitacao encontrarAbertaNoPainel(Ator ator, long id) {
+        ator.exigirEquipe();
+        var pedido = encontrar(id);
+        if (pedido.status() != Status.ABERTA) {
             throw ApiException.conflito("A edição está disponível apenas para solicitações abertas.");
         }
-        return detalhe;
+        return pedido;
     }
 
     @Transactional

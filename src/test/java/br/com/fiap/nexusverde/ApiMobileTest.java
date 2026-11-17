@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.util.HtmlUtils;
 
 @SpringBootTest(properties = {
     "nexus.equipe-email=equipe-test@example.com",
@@ -386,7 +387,8 @@ class ApiMobileTest {
                 .andExpect(status().isForbidden());
 
         var edicao = mvc.perform(get(ficha + "/editar").session(equipePainel))
-                .andExpect(status().isOk()).andExpect(content().string(containsString("Pedido do balcão"))).andReturn();
+                .andExpect(status().isOk()).andReturn();
+        assertThat(HtmlUtils.htmlUnescape(edicao.getResponse().getContentAsString())).contains("Pedido do balcão");
         String versao = campoOculto(edicao, "versao");
         mvc.perform(dadosPedido(post(ficha + "/editar"), equipePainel, csrf, "Pedido corrigido", "10")
                         .param("versao", versao))
