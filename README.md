@@ -8,6 +8,8 @@ CitizenTech para ajudar moradores afetados por interrupções de abastecimento a
 - [Swagger](https://nexus-verde-java-gs2026-2-tprk.onrender.com/swagger-ui/index.html)
 - [Painel da equipe](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
 
+O painel tem páginas próprias para [solicitações](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/solicitacoes) e [pontos de água](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/pontos-agua). A ficha de cada solicitação registra as novas mudanças de status e exige motivo no cancelamento pelo painel. A equipe pode buscar pedidos e cadastrar, editar ou atualizar o estoque dos pontos.
+
 Nos testes do Mobile, configure a URL base com o sufixo `/api`. A conta de avaliação do ambiente online é distribuída pela equipe.
 
 ## Executar

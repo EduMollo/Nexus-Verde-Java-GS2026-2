@@ -7,7 +7,12 @@ import br.com.fiap.nexusverde.catalogo.CatalogoService;
 import br.com.fiap.nexusverde.solicitacao.SolicitacaoDtos.*;
 import br.com.fiap.nexusverde.web.ApiException;
 import br.com.fiap.nexusverde.web.Pagina;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,21 +21,54 @@ import org.springframework.transaction.annotation.Transactional;
 public class SolicitacaoService {
     private final SolicitacaoRepository pedidos;
     private final EventoRepository eventos;
+    private final HistoricoStatusRepository historico;
     private final UsuarioRepository usuarios;
     private final CatalogoService catalogo;
 
     SolicitacaoService(SolicitacaoRepository pedidos, EventoRepository eventos,
-                       UsuarioRepository usuarios, CatalogoService catalogo) {
+                       UsuarioRepository usuarios, CatalogoService catalogo, HistoricoStatusRepository historico) {
         this.pedidos = pedidos;
         this.eventos = eventos;
         this.usuarios = usuarios;
         this.catalogo = catalogo;
+        this.historico = historico;
     }
 
     public Pagina<Saida> listar(Ator ator, Pageable pagina) {
         var resultados = ator.equipe() ? pedidos.findByExcluidaEmIsNull(pagina)
                 : pedidos.findBySolicitanteIdAndExcluidaEmIsNull(ator.id(), pagina);
         return Pagina.de(resultados.map(Solicitacao::saida));
+    }
+
+    public Pagina<Saida> pesquisar(Ator ator, String busca, Status status, Urgencia urgencia, Pageable pagina) {
+        ator.exigirEquipe();
+        String termo = busca.strip().toLowerCase(Locale.ROOT);
+        Specification<Solicitacao> filtros = (pedido, consulta, cb) -> {
+            var condicoes = new ArrayList<Predicate>();
+            condicoes.add(cb.isNull(pedido.get("excluidaEm")));
+            if (status != null) {
+                condicoes.add(cb.equal(pedido.get("status"), status));
+            }
+            if (urgencia != null) {
+                condicoes.add(cb.equal(pedido.get("urgencia"), urgencia));
+            }
+            if (!termo.isEmpty()) {
+                condicoes.add(cb.or(cb.gt(cb.locate(cb.lower(pedido.get("cidade")), termo), 0),
+                        cb.gt(cb.locate(cb.lower(pedido.get("descricao")), termo), 0)));
+            }
+            return cb.and(condicoes.toArray(Predicate[]::new));
+        };
+        return Pagina.de(pedidos.findAll(filtros, pagina).map(Solicitacao::saida));
+    }
+
+    public long contar(Ator ator, Status status) {
+        ator.exigirEquipe();
+        return pedidos.countByStatusAndExcluidaEmIsNull(status);
+    }
+
+    public List<Movimentacao> historico(Ator ator, Long id) {
+        ator.exigirEquipe();
+        return historico.findBySolicitacaoIdOrderByIdDesc(id).stream().map(HistoricoStatus::saida).toList();
     }
 
     public Pagina<Saida> triagem(Ator ator, Pageable pagina) {
@@ -76,9 +114,26 @@ public class SolicitacaoService {
 
     @Transactional
     public Saida status(Ator ator, Long id, Status status) {
+        return registrarStatus(ator, id, status, null);
+    }
+
+    @Transactional
+    public Saida cancelarNoPainel(Ator ator, Long id, String justificativa) {
+        String motivo = justificativa == null ? "" : justificativa.strip();
+        if (motivo.isEmpty() || motivo.length() > 400) {
+            throw ApiException.invalido("Informe um motivo com até 400 caracteres.");
+        }
+        return registrarStatus(ator, id, Status.CANCELADA, motivo);
+    }
+
+    private Saida registrarStatus(Ator ator, Long id, Status status, String motivo) {
         ator.exigirEquipe();
         Solicitacao pedido = encontrar(id);
+        Status anterior = pedido.status();
         pedido.alterarStatus(status);
+        if (anterior != status) {
+            historico.save(new HistoricoStatus(id, ator.id(), anterior, status, motivo));
+        }
         return pedido.saida();
     }
 

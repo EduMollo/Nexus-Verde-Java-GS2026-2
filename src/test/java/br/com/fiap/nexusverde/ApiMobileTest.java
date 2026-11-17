@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 import java.util.regex.Pattern;
 
@@ -79,11 +80,84 @@ class ApiMobileTest {
         mvc.perform(get("/painel").session(sessao))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Painel de abastecimento")))
-                .andExpect(content().string(containsString("/assets/painel.css?v=2")))
-                .andExpect(content().string(containsString("/painel/pedidos/" + pedido + "/status")))
+                .andExpect(content().string(containsString("/assets/painel.css?v=3")))
+                .andExpect(content().string(containsString("/painel/solicitacoes")))
+                .andExpect(content().string(containsString("/painel/pontos-agua")));
+        mvc.perform(get("/painel/solicitacoes").session(sessao)
+                        .param("busca", "canoas").param("status", "ABERTA").param("urgencia", "ALTA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/painel/solicitacoes/" + pedido)))
                 .andExpect(content().string(containsString("70/100")))
+                .andExpect(content().string(not(containsString("Posto de teste"))));
+        mvc.perform(get("/painel/solicitacoes").session(sessao).param("busca", "cidade inexistente"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Nenhuma solicitação corresponde")));
+
+        var ficha = mvc.perform(get("/painel/solicitacoes/{id}", pedido).session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Histórico de status"))).andReturn();
+        var csrf = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"");
+        var csrfFicha = csrf.matcher(ficha.getResponse().getContentAsString());
+        assertThat(csrfFicha.find()).isTrue();
+        mvc.perform(post("/painel/pedidos/{id}/status", pedido).session(sessao).param("_csrf", csrfFicha.group(1))
+                        .param("status", "CANCELADA").param("motivo", " "))
+                .andExpect(redirectedUrl("/painel/solicitacoes/" + pedido))
+                .andExpect(flash().attributeExists("erro"));
+        mvc.perform(post("/painel/pedidos/{id}/status", pedido).session(sessao).param("_csrf", csrfFicha.group(1))
+                        .param("status", "EM_ATENDIMENTO"))
+                .andExpect(redirectedUrl("/painel/solicitacoes/" + pedido))
+                .andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(post("/painel/pedidos/{id}/status", pedido).session(sessao).param("_csrf", csrfFicha.group(1))
+                        .param("status", "CANCELADA").param("motivo", "Solicitação em duplicidade"))
+                .andExpect(redirectedUrl("/painel/solicitacoes/" + pedido))
+                .andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(get("/painel/solicitacoes/{id}", pedido).session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Aberta → Em atendimento")))
+                .andExpect(content().string(containsString("Em atendimento → Cancelada")))
+                .andExpect(content().string(containsString("Solicitação em duplicidade")));
+
+        mvc.perform(get("/painel/pontos-agua").session(sessao).param("busca", "posto").param("status", "DISPONIVEL"))
+                .andExpect(status().isOk())
                 .andExpect(content().string(containsString("/painel/pontos/" + ponto + "/disponibilidade")))
-                .andExpect(content().string(containsString("1000 de 3000 L")));
+                .andExpect(content().string(containsString("1000 de 3000 L")))
+                .andExpect(content().string(not(containsString("Sem abastecimento"))));
+        var edicao = mvc.perform(get("/painel/pontos-agua/{id}/editar", ponto).session(sessao))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Posto de teste"))).andReturn();
+        var versao = Pattern.compile("name=\"versao\" value=\"([^\"]+)\"")
+                .matcher(edicao.getResponse().getContentAsString());
+        assertThat(versao.find()).isTrue();
+        var atualizacao = post("/painel/pontos-agua/{id}/editar", ponto).session(sessao)
+                .param("_csrf", csrfFicha.group(1)).param("versao", versao.group(1))
+                .param("nome", "Posto atualizado").param("tipo", "POSTO_DISTRIBUICAO").param("endereco", "Rua do posto")
+                .param("cidade", "Esteio").param("status", "ESTOQUE_BAIXO")
+                .param("capacidadeLitros", "3000").param("estoqueLitros", "200");
+        mvc.perform(atualizacao).andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(get("/api/pontos-agua/{id}", ponto).header("Authorization", equipeApi))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.cidade").value("Esteio"))
+                .andExpect(jsonPath("$.estoqueLitros").value(200));
+        mvc.perform(atualizacao).andExpect(status().isOk())
+                .andExpect(content().string(containsString("O ponto foi atualizado.")));
+        var formulario = mvc.perform(get("/painel/pontos-agua/novo").session(sessao))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Cadastrar ponto de água"))).andReturn();
+        var csrfPonto = csrf.matcher(formulario.getResponse().getContentAsString());
+        assertThat(csrfPonto.find()).isTrue();
+        mvc.perform(post("/painel/pontos-agua/novo").session(sessao).param("_csrf", csrfPonto.group(1))
+                        .param("nome", "Reservatorio painel").param("tipo", "RESERVATORIO")
+                        .param("endereco", "Rua do teste").param("cidade", "Canoas").param("status", "DISPONIVEL")
+                        .param("capacidadeLitros", "2000").param("estoqueLitros", "500"))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("sucesso"));
+        var pontosDaBusca = corpo(mvc.perform(get("/api/pontos-agua").header("Authorization", equipeApi))
+                .andExpect(status().isOk()).andReturn()).path("content");
+        long novoId = 0;
+        for (JsonNode item : pontosDaBusca) {
+            if ("Reservatorio painel".equals(item.path("nome").asText())) {
+                novoId = item.path("id").asLong();
+            }
+        }
+        assertThat(novoId).isPositive();
+        mvc.perform(delete("/api/pontos-agua/{id}", novoId).header("Authorization", equipeApi))
+                .andExpect(status().isNoContent());
         mvc.perform(delete("/api/pontos-agua/{id}", ponto).header("Authorization", equipeApi))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/regioes").session(sessao)).andExpect(status().isUnauthorized());

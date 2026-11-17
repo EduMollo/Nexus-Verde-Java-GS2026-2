@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout(${'Solicitação #' + pedido.id()}, 'solicitacoes', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <nav class="voltar" aria-label="Voltar"><a th:href="@{/painel/solicitacoes}">← Solicitações</a></nav>
+    <section aria-labelledby="titulo-pedido" th:with="ativoPedido=${pedido.status().name() == 'ABERTA' or pedido.status().name() == 'EM_ATENDIMENTO'}">
+        <div class="pagina-titulo">
+            <div>
+                <p th:text="|Pedido #${pedido.id()}|"></p>
+                <h1 id="titulo-pedido" th:text="${@painelFormato.rotulo(pedido.tipo())}"></h1>
+            </div>
+            <span class="estado" th:attr="data-estado=${pedido.status().name()}" th:text="${@painelFormato.rotulo(pedido.status())}"></span>
+        </div>
+        <div class="grade-ficha">
+            <div class="cartao">
+                <h2>Dados do pedido</h2>
+                <p class="descricao" th:text="${pedido.descricao()}"></p>
+                <dl class="metadados">
+                    <div class="local"><dt>Local</dt><dd th:text="|${pedido.endereco()} · ${pedido.cidade()}|"></dd></div>
+                    <div><dt>Solicitante</dt><dd th:text="${pedido.solicitante().nome()}"></dd></div>
+                    <div><dt>Pessoas afetadas</dt><dd th:text="${pedido.quantidadePessoas()}"></dd></div>
+                    <div><dt>Urgência</dt><dd class="urgencia" th:attr="data-urgencia=${pedido.urgencia().name()}" th:text="${@painelFormato.rotulo(pedido.urgencia())}"></dd></div>
+                    <div><dt>Grupo vulnerável</dt><dd th:text="${pedido.grupoVulneravel()} ? 'Sim' : 'Não'"></dd></div>
+                </dl>
+                <div class="medicao" th:if="${pedido.prioridade() != null}">
+                    <div class="medicao-rotulo"><span>Prioridade</span><strong th:text="|${pedido.prioridade()}/100|"></strong></div>
+                    <meter min="0" max="100" th:value="${pedido.prioridade()}" aria-label="Prioridade"></meter>
+                </div>
+                <div class="analise" th:if="${pedido.analiseIa() != null}">
+                    <h3>Análise por IA</h3>
+                    <p th:text="${pedido.analiseIa()}"></p>
+                </div>
+                <div class="acoes" th:if="${ativoPedido}">
+                    <form method="post" th:action="@{/painel/pedidos/{id}/status(id=${pedido.id()})}">
+                        <button type="submit" name="status" th:if="${pedido.status().name() == 'ABERTA'}" value="EM_ATENDIMENTO">Iniciar atendimento</button>
+                        <button type="submit" name="status" th:if="${pedido.status().name() == 'EM_ATENDIMENTO'}" value="ATENDIDA">Marcar atendida</button>
+                    </form>
+                    <form th:if="${iaDisponivel}" method="post" th:action="@{/painel/pedidos/{id}/analise(id=${pedido.id()})}">
+                        <button class="secundario" type="submit">Gerar análise por IA</button>
+                    </form>
+                </div>
+                <p class="mensagem aviso" th:if="${ativoPedido and !iaDisponivel}">Análise por IA indisponível. Você pode continuar o atendimento.</p>
+                <details class="cancelamento" th:if="${ativoPedido}">
+                    <summary>Cancelar solicitação</summary>
+                    <form method="post" th:action="@{/painel/pedidos/{id}/status(id=${pedido.id()})}">
+                        <input name="status" type="hidden" value="CANCELADA">
+                        <label>Motivo do cancelamento
+                            <textarea name="motivo" rows="3" maxlength="400" required></textarea>
+                        </label>
+                        <button class="botao-perigo" type="submit">Confirmar cancelamento</button>
+                    </form>
+                </details>
+            </div>
+            <aside class="cartao" aria-labelledby="historico-titulo">
+                <h2 id="historico-titulo">Histórico de status</h2>
+                <ol class="historico">
+                    <li th:each="movimento : ${historico}">
+                        <strong th:text="|${@painelFormato.rotulo(movimento.statusAnterior())} → ${@painelFormato.rotulo(movimento.statusNovo())}|"></strong>
+                        <time th:attr="datetime=${movimento.registradaEm()}" th:text="${@painelFormato.data(movimento.registradaEm())}"></time>
+                        <p th:if="${movimento.motivo() != null}" th:text="${movimento.motivo()}"></p>
+                    </li>
+                    <li><strong>Solicitação registrada</strong>
+                        <time th:attr="datetime=${pedido.criadaEm()}" th:text="${@painelFormato.data(pedido.criadaEm())}"></time>
+                    </li>
+                </ol>
+            </aside>
+        </div>
+    </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Solicitações', 'solicitacoes', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <section aria-labelledby="titulo-solicitacoes">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-solicitacoes">Solicitações</h1>
+                <p>Encontre pedidos por cidade, status ou urgência.</p>
+            </div>
+        </div>
+        <form class="filtros" method="get" th:action="@{/painel/solicitacoes}">
+            <label>Busca
+                <input type="search" name="busca" th:value="${busca}" placeholder="Cidade ou descrição">
+            </label>
+            <label>Status
+                <select name="status">
+                    <option value="">Todos os status</option>
+                    <option th:each="opcao : ${situacoes}" th:value="${opcao.name()}"
+                            th:text="${@painelFormato.rotulo(opcao)}" th:selected="${opcao == status}"></option>
+                </select>
+            </label>
+            <label>Urgência
+                <select name="urgencia">
+                    <option value="">Todas as urgências</option>
+                    <option th:each="opcao : ${urgencias}" th:value="${opcao.name()}"
+                            th:text="${@painelFormato.rotulo(opcao)}" th:selected="${opcao == urgencia}"></option>
+                </select>
+            </label>
+            <div class="filtros-acoes">
+                <button type="submit">Filtrar</button>
+                <a class="botao secundario" th:href="@{/painel/solicitacoes}">Limpar</a>
+            </div>
+        </form>
+        <p class="resultados" th:text="|${pedidos.totalElements()} solicitação(ões) encontrada(s)|"></p>
+        <p th:if="${pedidos.content().isEmpty()}" class="estado-vazio">Nenhuma solicitação corresponde aos filtros nesta página.</p>
+        <div class="grade">
+            <article class="cartao" th:each="pedido : ${pedidos.content()}">
+                <div class="cartao-cabecalho">
+                    <h2 th:text="${@painelFormato.rotulo(pedido.tipo())}"></h2>
+                    <span class="estado" th:attr="data-estado=${pedido.status().name()}" th:text="${@painelFormato.rotulo(pedido.status())}"></span>
+                </div>
+                <div class="registro-dados">
+                    <span th:text="|Pedido #${pedido.id()} · ${pedido.cidade()}|"></span>
+                    <strong class="urgencia" th:attr="data-urgencia=${pedido.urgencia().name()}"
+                            th:text="${@painelFormato.rotulo(pedido.urgencia())}"></strong>
+                </div>
+                <p class="descricao descricao-curta" th:text="${pedido.descricao()}"></p>
+                <div class="medicao" th:if="${pedido.prioridade() != null}">
+                    <div class="medicao-rotulo"><span>Prioridade</span><strong th:text="|${pedido.prioridade()}/100|"></strong></div>
+                    <meter min="0" max="100" th:value="${pedido.prioridade()}" aria-label="Prioridade"></meter>
+                </div>
+                <div class="acoes">
+                    <a class="botao secundario" th:href="@{/painel/solicitacoes/{id}(id=${pedido.id()})}">Abrir solicitação</a>
+                </div>
+            </article>
+        </div>
+        <nav class="paginacao" th:if="${pedidos.totalPages() > 1}" aria-label="Páginas de solicitações">
+            <a th:if="${pedidos.number() > 0}" th:href="@{/painel/solicitacoes(pagina=${pedidos.number()-1},busca=${busca},status=${status},urgencia=${urgencia})}">Anterior</a>
+            <span th:text="|Página ${pedidos.number()+1} de ${pedidos.totalPages()}|"></span>
+            <a th:if="${pedidos.number()+1 < pedidos.totalPages()}" th:href="@{/painel/solicitacoes(pagina=${pedidos.number()+1},busca=${busca},status=${status},urgencia=${urgencia})}">Próxima</a>
+        </nav>
+    </section>
+</div>
+</body>
+</html>
