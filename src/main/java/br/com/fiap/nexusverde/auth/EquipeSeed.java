@@ -12,13 +12,16 @@ class EquipeSeed implements ApplicationRunner {
     private final PasswordEncoder senhas;
     private final String email;
     private final String senha;
+    private final boolean demonstracao;
 
     EquipeSeed(UsuarioRepository usuarios, PasswordEncoder senhas,
-               @Value("${nexus.equipe-email}") String email, @Value("${nexus.equipe-senha}") String senha) {
+               @Value("${nexus.equipe-email}") String email, @Value("${nexus.equipe-senha}") String senha,
+               @Value("${nexus.demo}") boolean demonstracao) {
         this.usuarios = usuarios;
         this.senhas = senhas;
         this.email = email;
         this.senha = senha;
+        this.demonstracao = demonstracao;
     }
 
     @Override
@@ -26,8 +29,10 @@ class EquipeSeed implements ApplicationRunner {
         if (email.isBlank() && senha.isBlank()) {
             return;
         }
-        if (!email.contains("@") || senha.length() < 12) {
-            throw new IllegalStateException("Configure EQUIPE_EMAIL e uma EQUIPE_SENHA com 12 caracteres ou mais.");
+        int tamanhoMinimo = demonstracao ? 6 : 12;
+        if (!email.contains("@") || senha.length() < tamanhoMinimo) {
+            throw new IllegalStateException("Configure EQUIPE_EMAIL e uma EQUIPE_SENHA com "
+                    + tamanhoMinimo + " caracteres ou mais.");
         }
         AuthService.validarTamanhoSenha(senha);
         String normalizado = AuthService.normalizarEmail(email);
