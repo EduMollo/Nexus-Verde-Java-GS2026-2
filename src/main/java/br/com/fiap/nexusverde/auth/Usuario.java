@@ -15,6 +15,9 @@ public class Usuario {
     private Papel papel;
     private String telefone;
     private String cidade;
+    private boolean ativo = true;
+    @Version
+    private long versaoAcesso;
 
     protected Usuario() {}
 
@@ -31,6 +34,9 @@ public class Usuario {
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public Papel getPapel() { return papel; }
+    boolean ativo() { return ativo; }
+    void definirAtivo(boolean ativo) { this.ativo = ativo; }
+    long versaoAcesso() { return versaoAcesso; }
     String senhaHash() { return senhaHash; }
     void atualizarSenha(String hash) { senhaHash = hash; }
     String telefone() { return telefone; }

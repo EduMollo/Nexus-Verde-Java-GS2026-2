@@ -31,6 +31,10 @@ public class AuthService {
     }
 
     Sessao cadastrar(Cadastro dados) {
+        return sessao(criar(dados, Papel.CIDADAO));
+    }
+
+    Usuario criar(Cadastro dados, Papel papel) {
         validarTamanhoSenha(dados.senha());
         String email = normalizarEmail(dados.email());
         if (usuarios.existsByEmail(email)) {
@@ -38,9 +42,8 @@ public class AuthService {
         }
 
         try {
-            Usuario usuario = usuarios.saveAndFlush(new Usuario(dados.nome().strip(), email,
-                    senhas.encode(dados.senha()), Papel.CIDADAO, dados.telefone(), dados.cidade()));
-            return sessao(usuario);
+            return usuarios.saveAndFlush(new Usuario(dados.nome().strip(), email,
+                    senhas.encode(dados.senha()), papel, dados.telefone(), dados.cidade()));
         } catch (DataIntegrityViolationException e) {
             if (usuarios.existsByEmail(email)) {
                 throw emailEmUso();
@@ -56,7 +59,7 @@ public class AuthService {
     public Usuario autenticar(String email, String senha) {
         Usuario usuario = usuarios.findByEmail(normalizarEmail(email)).orElse(null);
         String hash = usuario == null ? hashDeComparacao : usuario.senhaHash();
-        if (senha.getBytes(UTF_8).length > 72 || !senhas.matches(senha, hash) || usuario == null) {
+        if (senha.getBytes(UTF_8).length > 72 || !senhas.matches(senha, hash) || usuario == null || !usuario.ativo()) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
         }
         return usuario;
@@ -70,6 +73,7 @@ public class AuthService {
                 .issuedAt(agora)
                 .expiresAt(agora.plus(2, ChronoUnit.HOURS))
                 .claim("papel", usuario.getPapel().name())
+                .claim("versaoAcesso", Long.toString(usuario.versaoAcesso()))
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return new Sessao(jwt.encode(JwtEncoderParameters.from(header, claims)).getTokenValue(),

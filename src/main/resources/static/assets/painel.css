@@ -481,3 +481,35 @@ summary { cursor: pointer; color: var(--verde); font-weight: 700; }
 @media (max-width: 34rem) {
     .formulario-ponto fieldset { grid-template-columns: 1fr; }
 }
+
+.icone-usuario::before {
+    left: 5px;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+}
+
+.icone-usuario::after {
+    inset: 8px 1px 1px;
+    border: 1.5px solid currentColor;
+    border-radius: 8px 8px 3px 3px;
+}
+
+.tabela-usuarios {
+    overflow-x: auto;
+    border: 1px solid var(--linha);
+    border-radius: 1rem;
+    background: var(--superficie);
+}
+
+.tabela-usuarios table { width: 100%; border-collapse: collapse; text-align: left; }
+.tabela-usuarios th, .tabela-usuarios td { padding: 0.8rem clamp(0.75rem, 2vw, 1.15rem); }
+.tabela-usuarios th { color: var(--suave); font-size: 0.8rem; background: #f3f7f3; }
+.tabela-usuarios td { border-top: 1px solid var(--linha); }
+.tabela-usuarios tbody tr:hover { background: #f9fbf9; }
+.usuario-nome { min-width: 10rem; overflow-wrap: anywhere; }
+.usuario-nome strong, .usuario-nome span { display: block; }
+.usuario-nome span, .usuario-proprio, .regra-senha { color: var(--suave); font-size: 0.825rem; }
+.regra-senha { align-self: end; }

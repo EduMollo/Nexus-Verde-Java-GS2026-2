@@ -25,6 +25,7 @@
             <h2 id="titulo-formulario">Acesso da equipe</h2>
             <p>Entre com seu e-mail e senha para abrir o painel.</p>
             <p th:if="${param.erro}" class="mensagem erro" role="alert">Confira o e-mail e a senha da equipe.</p>
+            <p th:if="${param.expirada}" class="mensagem aviso" role="status">Sua sessão foi encerrada. Entre novamente.</p>
             <form th:action="@{/painel/entrar}" method="post" class="login-formulario">
                 <label>E-mail <input type="email" name="username" autocomplete="username" required></label>
                 <label>Senha <input type="password" name="password" autocomplete="current-password" required></label>
