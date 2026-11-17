@@ -86,10 +86,20 @@ public class CatalogoService {
     private PontoSaida gravarPonto(Ator ator, Long id, PontoEntrada dados, String versao) {
         ator.exigirEquipe();
         PontoAgua ponto = id == null ? new PontoAgua() : encontrarPonto(id);
-        if (id != null && versao != null && !ponto.saida().atualizadoEm().toString().equals(versao)) {
-            throw ApiException.conflito("O ponto foi atualizado. Abra a edição novamente para conferir os dados.");
+        Long regiaoId = dados.regiaoId();
+        if (versao != null) {
+            regiaoId = null;
+            if (id != null) {
+                PontoSaida anterior = ponto.saida();
+                if (!anterior.atualizadoEm().toString().equals(versao)) {
+                    throw ApiException.conflito("O ponto foi atualizado. Abra a edição novamente para conferir os dados.");
+                }
+                if (anterior.cidade().equalsIgnoreCase(dados.cidade().strip())) {
+                    regiaoId = anterior.regiaoId();
+                }
+            }
         }
-        Regiao regiao = resolverRegiao(dados.regiaoId(), dados.cidade());
+        Regiao regiao = resolverRegiao(regiaoId, dados.cidade());
         ponto.atualizar(dados, regiao);
         return pontos.save(ponto).saida();
     }

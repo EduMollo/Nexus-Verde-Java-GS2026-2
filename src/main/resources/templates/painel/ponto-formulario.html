@@ -14,8 +14,6 @@
                 <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}"></li>
             </ul>
             <input th:if="${pontoId != null}" type="hidden" name="versao" th:value="${versao}">
-            <input type="hidden" th:field="*{regiaoId}">
-            <p class="erro-campo" th:if="${#fields.hasErrors('regiaoId')}" th:errors="*{regiaoId}"></p>
             <fieldset>
                 <legend>Identificação e endereço</legend>
                 <label>Nome
