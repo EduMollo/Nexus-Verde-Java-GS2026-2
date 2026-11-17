@@ -16,11 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.util.HtmlUtils;
 
 @SpringBootTest(properties = {
     "nexus.equipe-email=equipe-test@example.com",
@@ -51,6 +53,7 @@ class ApiMobileTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired JdbcTemplate sql;
 
     @Test
     void swaggerPublicaOContratoEPainelExigeSessaoDaEquipe() throws Exception {
@@ -83,7 +86,7 @@ class ApiMobileTest {
         mvc.perform(get("/painel").session(sessao))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Painel de abastecimento")))
-                .andExpect(content().string(containsString("/assets/painel.css?v=4")))
+                .andExpect(content().string(containsString("/assets/painel.css?v=5")))
                 .andExpect(content().string(containsString("/painel/solicitacoes")))
                 .andExpect(content().string(containsString("/painel/pontos-agua")));
         mvc.perform(get("/painel/solicitacoes").session(sessao)
@@ -334,6 +337,106 @@ class ApiMobileTest {
     private ResultActions autenticarApi(String email, String senha) throws Exception {
         String dados = json.createObjectNode().put("email", email).put("senha", senha).toString();
         return mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(dados));
+    }
+
+    @Test
+    void equipeAbrePedidoEmNomeDoCidadaoECorrigeAntesDoAtendimento() throws Exception {
+        String email = "solicitante-balcao@example.com";
+        String cidadao = cadastrar(email);
+        long cidadaoId = corpo(autenticarApi(email, "TesteSenha-2026").andExpect(status().isOk()).andReturn())
+                .path("usuario").path("id").asLong();
+        var equipePainel = entrarNoPainel("equipe-test@example.com", "Equipe-Teste-2026");
+        mvc.perform(get("/painel/solicitacoes/nova").session(equipePainel).param("busca", email))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/painel/solicitacoes/nova/" + cidadaoId)));
+        mvc.perform(get("/painel/solicitacoes/nova").session(equipePainel).param("busca", "equipe-test@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Nenhum cidadão ativo")));
+        var formulario = mvc.perform(get("/painel/solicitacoes/nova/{id}", cidadaoId).session(equipePainel))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cadastrar solicitação"))).andReturn();
+        String csrf = csrfDaPagina(formulario);
+        String registro = campoOculto(formulario, "registro");
+        mvc.perform(dadosPedido(post("/painel/solicitacoes/nova/{id}", cidadaoId), equipePainel, csrf,
+                        "Pedido do balcão", "0").param("registro", registro))
+                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("dados", "quantidadePessoas"));
+        var criado = mvc.perform(dadosPedido(post("/painel/solicitacoes/nova/{id}", cidadaoId), equipePainel, csrf,
+                        "Pedido do balcão", "5").param("registro", registro))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("sucesso")).andReturn();
+        String ficha = criado.getResponse().getRedirectedUrl();
+        assertThat(ficha).startsWith("/painel/solicitacoes/");
+        long id = Long.parseLong(ficha.substring(ficha.lastIndexOf('/') + 1));
+        mvc.perform(dadosPedido(post("/painel/solicitacoes/nova/{id}", cidadaoId), equipePainel, csrf,
+                        "Pedido do balcão", "5").param("registro", registro))
+                .andExpect(redirectedUrl(ficha));
+        assertThat(sql.queryForObject("select count(*) from eventos_pendentes where solicitacao_id = ?", Long.class, id))
+                .isEqualTo(1);
+        mvc.perform(get(ficha).session(equipePainel)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cadastrada pela equipe")))
+                .andExpect(content().string(containsString("Editar solicitação")));
+        mvc.perform(get("/painel/solicitacoes").session(equipePainel).param("busca", "#" + id))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Pedido do balcão")));
+
+        mvc.perform(get("/api/solicitacoes/{id}", id).header("Authorization", cidadao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.solicitante.id").value(cidadaoId))
+                .andExpect(jsonPath("$.status").value("ABERTA"))
+                .andExpect(jsonPath("$.cadastradaPor").doesNotExist());
+        mvc.perform(post("/api/solicitacoes").header("Authorization", equipe())
+                        .contentType(MediaType.APPLICATION_JSON).content(PEDIDO))
+                .andExpect(status().isForbidden());
+
+        var edicao = mvc.perform(get(ficha + "/editar").session(equipePainel))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(HtmlUtils.htmlUnescape(edicao.getResponse().getContentAsString())).contains("Pedido do balcão");
+        String versao = campoOculto(edicao, "versao");
+        mvc.perform(dadosPedido(post(ficha + "/editar"), equipePainel, csrf, "Pedido corrigido", "10")
+                        .param("versao", versao))
+                .andExpect(redirectedUrl(ficha)).andExpect(flash().attributeExists("sucesso"));
+        mvc.perform(dadosPedido(post(ficha + "/editar"), equipePainel, csrf, "Edição desatualizada", "20")
+                        .param("versao", versao))
+                .andExpect(redirectedUrl(ficha)).andExpect(flash().attributeExists("erro"));
+        mvc.perform(get("/api/solicitacoes/{id}", id).header("Authorization", cidadao))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.descricao").value("Pedido corrigido"))
+                .andExpect(jsonPath("$.prioridade").value(75));
+        mvc.perform(post("/painel/pedidos/{id}/status", id).session(equipePainel)
+                        .param("_csrf", csrf).param("status", "EM_ATENDIMENTO"))
+                .andExpect(redirectedUrl(ficha));
+        mvc.perform(get(ficha + "/editar").session(equipePainel))
+                .andExpect(redirectedUrl(ficha)).andExpect(flash().attributeExists("erro"));
+    }
+
+    @Test
+    void cadastroDeCidadaoPodeContinuarDiretoParaSolicitacao() throws Exception {
+        var equipePainel = entrarNoPainel("equipe-test@example.com", "Equipe-Teste-2026");
+        var cadastro = mvc.perform(get("/painel/usuarios/novo").session(equipePainel).param("paraSolicitacao", "true"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cadastrar e continuar"))).andReturn();
+        var criado = mvc.perform(post("/painel/usuarios/novo").session(equipePainel)
+                        .param("_csrf", csrfDaPagina(cadastro)).param("paraSolicitacao", "true")
+                        .param("nome", "Cidadã do atendimento").param("email", "cidada-registro@example.com")
+                        .param("papel", "CIDADAO").param("senha", "Testar-Cidada-2026").param("confirmacao", "Testar-Cidada-2026"))
+                .andExpect(status().is3xxRedirection()).andReturn();
+        String proximaEtapa = criado.getResponse().getRedirectedUrl();
+        assertThat(proximaEtapa).startsWith("/painel/solicitacoes/nova/");
+        mvc.perform(get(proximaEtapa).session(equipePainel)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cidadã do atendimento")))
+                .andExpect(content().string(containsString("Cadastrar solicitação")));
+    }
+
+    private static MockHttpServletRequestBuilder dadosPedido(MockHttpServletRequestBuilder pedido,
+            MockHttpSession sessao, String csrf, String descricao, String pessoas) {
+        return pedido.session(sessao).param("_csrf", csrf)
+                .param("tipo", "FALTA_DE_AGUA").param("descricao", descricao)
+                .param("quantidadePessoas", pessoas).param("urgencia", "ALTA").param("grupoVulneravel", "true")
+                .param("endereco", "Rua da solicitação").param("cidade", "Canoas");
+    }
+
+    private static String campoOculto(MvcResult pagina, String nome) throws Exception {
+        var campo = Pattern.compile("name=\"" + nome + "\" value=\"([^\"]+)\"")
+                .matcher(pagina.getResponse().getContentAsString());
+        assertThat(campo.find()).isTrue();
+        return campo.group(1);
     }
 
     private long criarPedido(String cidadao) throws Exception {

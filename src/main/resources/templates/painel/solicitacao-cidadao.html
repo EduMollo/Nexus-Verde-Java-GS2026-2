@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Nova solicitação', 'solicitacoes', ~{::conteudo})}">
+<body>
+<div th:fragment="conteudo">
+    <nav class="voltar" aria-label="Voltar"><a th:href="@{/painel/solicitacoes}">← Solicitações</a></nav>
+    <section aria-labelledby="titulo-registro">
+        <div class="pagina-titulo">
+            <div>
+                <h1 id="titulo-registro">Nova solicitação</h1>
+                <p>Selecione o cidadão para quem você está registrando o pedido.</p>
+            </div>
+            <a class="botao secundario" th:if="${@acessoUsuarios.podeGerenciar()}"
+               th:href="@{/painel/usuarios/novo(paraSolicitacao=true)}">Cadastrar cidadão</a>
+        </div>
+        <ol class="etapas-registro" aria-label="Etapas do cadastro">
+            <li aria-current="step">Solicitante</li>
+            <li>Dados do pedido</li>
+        </ol>
+        <form class="filtros" method="get" th:action="@{/painel/solicitacoes/nova}">
+            <label>Buscar cidadão
+                <input name="busca" type="search" maxlength="254" th:value="${busca}" placeholder="Nome ou e-mail completo">
+            </label>
+            <div class="filtros-acoes">
+                <button type="submit">Buscar</button>
+                <a class="botao secundario" th:href="@{/painel/solicitacoes/nova}">Limpar</a>
+            </div>
+        </form>
+        <p class="estado-vazio" th:if="${cidadaos.content().isEmpty()}">Nenhum cidadão ativo corresponde à busca.</p>
+        <div class="cartao selecao-cidadao" th:unless="${cidadaos.content().isEmpty()}">
+            <ul class="lista-registros">
+                <li th:each="cidadao : ${cidadaos.content()}">
+                    <div class="registro-texto">
+                        <strong th:text="${cidadao.nome()}"></strong>
+                        <small th:text="|Conta #${cidadao.id()}${cidadao.cidade() == null or cidadao.cidade().isBlank() ? '' : ' · ' + cidadao.cidade()}|"></small>
+                    </div>
+                    <a class="botao secundario" th:href="@{/painel/solicitacoes/nova/{id}(id=${cidadao.id()})}"
+                       th:attr="aria-label=|Selecionar ${cidadao.nome()}|">Selecionar</a>
+                </li>
+            </ul>
+        </div>
+        <nav class="paginacao" th:if="${cidadaos.totalPages() > 1}" aria-label="Páginas de cidadãos">
+            <a th:if="${cidadaos.number() > 0}" th:href="@{/painel/solicitacoes/nova(busca=${busca},pagina=${cidadaos.number()-1})}">Anterior</a>
+            <span th:text="|Página ${cidadaos.number()+1} de ${cidadaos.totalPages()}|"></span>
+            <a th:if="${cidadaos.number()+1 < cidadaos.totalPages()}" th:href="@{/painel/solicitacoes/nova(busca=${busca},pagina=${cidadaos.number()+1})}">Próxima</a>
+        </nav>
+    </section>
+</div>
+</body>
+</html>

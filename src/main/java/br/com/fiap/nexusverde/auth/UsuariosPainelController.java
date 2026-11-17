@@ -46,20 +46,29 @@ class UsuariosPainelController {
     }
 
     @GetMapping("/novo")
-    String novo(Model model) {
+    String novo(Model model, @RequestParam(defaultValue = "false") boolean paraSolicitacao) {
+        model.addAttribute("paraSolicitacao", paraSolicitacao);
         model.addAttribute("dados", new CadastroUsuario("", "", Papel.CIDADAO, "", "", "", ""));
         return FORMULARIO;
     }
 
     @PostMapping("/novo")
     String cadastrar(@Valid @ModelAttribute("dados") CadastroUsuario dados, BindingResult erros,
+                     @RequestParam(defaultValue = "false") boolean paraSolicitacao, Model model,
                      RedirectAttributes retorno) {
+        model.addAttribute("paraSolicitacao", paraSolicitacao);
+        if (paraSolicitacao && dados.papel() != Papel.CIDADAO) {
+            erros.rejectValue("papel", "usuario.perfilSolicitacao", "Selecione o perfil Cidadão para registrar o pedido.");
+        }
         if (erros.hasErrors()) {
             return FORMULARIO;
         }
         try {
-            usuarios.cadastrar(dados);
+            long id = usuarios.cadastrar(dados);
             retorno.addFlashAttribute("sucesso", "Usuário cadastrado.");
+            if (paraSolicitacao) {
+                return "redirect:/painel/solicitacoes/nova/" + id;
+            }
             retorno.addAttribute("busca", AuthService.normalizarEmail(dados.email()));
             return LISTA;
         } catch (ApiException e) {

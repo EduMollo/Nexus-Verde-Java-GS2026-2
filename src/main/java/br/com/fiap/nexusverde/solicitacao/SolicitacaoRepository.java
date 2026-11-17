@@ -1,6 +1,7 @@
 package br.com.fiap.nexusverde.solicitacao;
 
 import java.util.Optional;
+import java.util.UUID;
 import br.com.fiap.nexusverde.solicitacao.SolicitacaoDtos.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,12 @@ interface SolicitacaoRepository extends JpaRepository<Solicitacao, Long>, JpaSpe
     @EntityGraph(attributePaths = "solicitante")
     Page<Solicitacao> findAll(Specification<Solicitacao> filtros, Pageable pagina);
 
+    Optional<Solicitacao> findByRegistroPainelAndCadastradaPorIdAndSolicitanteId(
+            UUID registroPainel, long equipe, long cidadao);
+
     long countByStatusAndExcluidaEmIsNull(Status status);
+
+
     @EntityGraph(attributePaths = "solicitante")
     Optional<Solicitacao> findByIdAndExcluidaEmIsNull(Long id);
 

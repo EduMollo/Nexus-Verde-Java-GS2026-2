@@ -1,6 +1,7 @@
 package br.com.fiap.nexusverde.solicitacao;
 
 import br.com.fiap.nexusverde.auth.Ator;
+import br.com.fiap.nexusverde.auth.Papel;
 import br.com.fiap.nexusverde.auth.Usuario;
 import br.com.fiap.nexusverde.auth.UsuarioRepository;
 import br.com.fiap.nexusverde.catalogo.CatalogoService;
@@ -11,6 +12,8 @@ import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ public class SolicitacaoService {
     public Pagina<Saida> pesquisar(Ator ator, String busca, Status status, Urgencia urgencia, Pageable pagina) {
         ator.exigirEquipe();
         String termo = busca.strip().toLowerCase(Locale.ROOT);
+        Long protocolo = protocoloBuscado(termo);
         Specification<Solicitacao> filtros = (pedido, consulta, cb) -> {
             var condicoes = new ArrayList<Predicate>();
             condicoes.add(cb.isNull(pedido.get("excluidaEm")));
@@ -52,13 +56,24 @@ public class SolicitacaoService {
             if (urgencia != null) {
                 condicoes.add(cb.equal(pedido.get("urgencia"), urgencia));
             }
-            if (!termo.isEmpty()) {
+            if (protocolo != null) {
+                condicoes.add(cb.equal(pedido.get("id"), protocolo));
+            } else if (!termo.isEmpty()) {
                 condicoes.add(cb.or(cb.gt(cb.locate(cb.lower(pedido.get("cidade")), termo), 0),
-                        cb.gt(cb.locate(cb.lower(pedido.get("descricao")), termo), 0)));
+                        cb.gt(cb.locate(cb.lower(pedido.get("descricao")), termo), 0),
+                        cb.gt(cb.locate(cb.lower(pedido.get("solicitante").get("nome")), termo), 0)));
             }
             return cb.and(condicoes.toArray(Predicate[]::new));
         };
         return Pagina.de(pedidos.findAll(filtros, pagina).map(Solicitacao::saida));
+    }
+
+    private static Long protocoloBuscado(String termo) {
+        try {
+            return Long.valueOf(termo.startsWith("#") ? termo.substring(1) : termo);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public long contar(Ator ator, Status status) {
@@ -85,16 +100,75 @@ public class SolicitacaoService {
         return pedido.saida();
     }
 
+    public DetalhePainel detalhePainel(Ator ator, Long id) {
+        ator.exigirEquipe();
+        return encontrar(id).detalhePainel();
+    }
+
     @Transactional
     public Saida criar(Ator ator, Entrada dados) {
         if (ator.equipe()) {
             throw ApiException.proibido();
         }
         Usuario usuario = usuarios.findById(ator.id()).orElseThrow(ApiException::proibido);
-        var regiao = catalogo.resolverRegiao(dados.regiaoId(), dados.cidade());
-        Solicitacao pedido = pedidos.save(new Solicitacao(usuario, regiao, dados));
-        eventos.save(new EventoPendente(pedido.id()));
-        return pedido.saida();
+        return salvarNova(nova(usuario, dados)).saida();
+    }
+
+    @Transactional
+    public long criarNoPainel(Ator ator, long cidadaoId, Entrada dados, UUID registro) {
+        ator.exigirEquipe();
+        var existente = localizarRegistroPainel(ator, cidadaoId, registro);
+        if (existente.isPresent()) {
+            return existente.get();
+        }
+        Usuario equipe = usuarios.findByIdAndPapelAndAtivoTrue(ator.id(), Papel.EQUIPE)
+                .orElseThrow(ApiException::proibido);
+        Usuario cidadao = usuarios.findByIdAndPapelAndAtivoTrue(cidadaoId, Papel.CIDADAO)
+                .orElseThrow(() -> ApiException.naoEncontrado("Cidadão ativo"));
+        Solicitacao pedido = nova(cidadao, dados);
+        pedido.atribuirCadastro(equipe, registro);
+        return salvarNova(pedido).id();
+    }
+
+    public Optional<Long> localizarRegistroPainel(Ator ator, long cidadaoId, UUID registro) {
+        ator.exigirEquipe();
+        return pedidos.findByRegistroPainelAndCadastradaPorIdAndSolicitanteId(registro, ator.id(), cidadaoId)
+                .map(Solicitacao::id);
+    }
+
+    private Solicitacao nova(Usuario solicitante, Entrada dados) {
+        return new Solicitacao(solicitante, catalogo.resolverRegiao(dados.regiaoId(), dados.cidade()), dados);
+    }
+
+    private Solicitacao salvarNova(Solicitacao pedido) {
+        Solicitacao salvo = pedidos.save(pedido);
+        eventos.save(new EventoPendente(salvo.id()));
+        return salvo;
+    }
+
+    @Transactional
+    public void editarNoPainel(Ator ator, long id, long versao, Entrada dados) {
+        Solicitacao pedido = encontrarAbertaNoPainel(ator, id);
+        DetalhePainel atual = pedido.detalhePainel();
+        if (atual.versao() != versao) {
+            throw ApiException.conflito("O pedido mudou. Abra a edição novamente para conferir os dados.");
+        }
+        Long regiao = atual.pedido().cidade().equalsIgnoreCase(dados.cidade().strip())
+                ? atual.pedido().regiaoId() : null;
+        pedido.editar(dados, catalogo.resolverRegiao(regiao, dados.cidade()));
+    }
+
+    public DetalhePainel detalheParaEdicao(Ator ator, long id) {
+        return encontrarAbertaNoPainel(ator, id).detalhePainel();
+    }
+
+    private Solicitacao encontrarAbertaNoPainel(Ator ator, long id) {
+        ator.exigirEquipe();
+        var pedido = encontrar(id);
+        if (pedido.status() != Status.ABERTA) {
+            throw ApiException.conflito("A edição está disponível apenas para solicitações abertas.");
+        }
+        return pedido;
     }
 
     @Transactional

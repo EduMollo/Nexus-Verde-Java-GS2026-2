@@ -1,6 +1,7 @@
 package br.com.fiap.nexusverde.solicitacao;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import br.com.fiap.nexusverde.auth.Usuario;
 import br.com.fiap.nexusverde.catalogo.Regiao;
@@ -16,6 +17,9 @@ class Solicitacao {
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Usuario solicitante;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Usuario cadastradaPor;
+    private UUID registroPainel;
     @ManyToOne(fetch = FetchType.LAZY)
     private Regiao regiao;
     @Enumerated(EnumType.STRING)
@@ -47,6 +51,15 @@ class Solicitacao {
         this.status = Status.ABERTA;
         this.criadaEm = Instant.now();
         editar(dados, regiao);
+    }
+
+    void atribuirCadastro(Usuario equipe, UUID registro) {
+        this.cadastradaPor = equipe;
+        this.registroPainel = registro;
+    }
+
+    DetalhePainel detalhePainel() {
+        return new DetalhePainel(saida(), cadastradaPor == null ? null : cadastradaPor.getNome(), versao);
     }
 
     void editar(Entrada dados, Regiao regiao) {
