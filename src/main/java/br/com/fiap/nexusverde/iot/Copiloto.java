@@ -1,0 +1,64 @@
+package br.com.fiap.nexusverde.iot;
+
+import java.net.URI;
+import java.net.http.*;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+@Service
+class Copiloto {
+    record Parecer(String texto, Procedimentos.Fonte fonte, String motor) {}
+    record Resposta(String texto, String fonte) {}
+    private final Procedimentos base;
+    private final ObjectProvider<ChatModel> modelos;
+    private final ObjectMapper json;
+    private final String webhook;
+    private final String token;
+    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(6)).build();
+
+    Copiloto(Procedimentos base, ObjectProvider<ChatModel> modelos, ObjectMapper json,
+             @Value("${IOT_N8N_URL:}") String webhook, @Value("${IOT_N8N_TOKEN:}") String token) {
+        this.base=base; this.modelos=modelos; this.json=json; this.webhook=webhook; this.token=token;
+    }
+
+    Parecer analisar(Situacao situacao) throws Exception {
+        List<Procedimentos.Fonte> fontes = base.buscar(situacao.consulta());
+        if (fontes.isEmpty()) throw new IllegalStateException("Nenhuma fonte recuperada");
+        String contexto = json.writeValueAsString(Map.of("situacao",situacao,"fontes",fontes));
+        Resposta resposta;
+        String motor;
+        if (!webhook.isBlank()) {
+            if (token.isBlank()) throw new IllegalStateException("Webhook sem credencial");
+            var req = HttpRequest.newBuilder(URI.create(webhook)).timeout(Duration.ofSeconds(50))
+                    .header("Content-Type","application/json").header("X-Copiloto-Key",token)
+                    .POST(HttpRequest.BodyPublishers.ofString(contexto)).build();
+            var r = http.send(req,HttpResponse.BodyHandlers.ofString());
+            if (r.statusCode()!=200) throw new IllegalStateException("Agente indisponível");
+            resposta=json.readValue(r.body(),Resposta.class);
+            motor="Agente n8n";
+        } else {
+            var modelo = modelos.getIfAvailable();
+            if (modelo==null) throw new IllegalStateException("Modelo indisponível");
+            String saida = ChatClient.create(modelo).prompt().system("""
+                    Redija uma orientação curta em português para a equipe de abastecimento.
+                    Use a situação e o procedimento mais pertinente. O cenário é fictício. Não afirme potabilidade,
+                    entrega efetuada ou ajuste de estoque. Os números já estão na interface.
+                    Retorne somente JSON com texto e fonte (código de um procedimento recuperado).
+                    """).user(contexto).call().content();
+            if (saida==null) throw new IllegalStateException("Resposta vazia");
+            resposta=json.readValue(saida.strip().replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", ""),Resposta.class);
+            motor="Spring AI";
+        }
+        if (resposta.texto()==null || resposta.texto().isBlank() || resposta.texto().length()>900)
+            throw new IllegalStateException("Orientação inválida");
+        var fonte = fontes.stream().filter(f -> f.codigo().equals(resposta.fonte())).findFirst().orElseThrow();
+        return new Parecer(resposta.texto().strip(), fonte, motor);
+    }
+}

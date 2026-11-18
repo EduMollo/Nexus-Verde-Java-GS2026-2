@@ -101,6 +101,7 @@ class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/iot/pontos/*/leituras").permitAll() // Chave temporária vinculada ao ponto.
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/solicitacoes/*/status").hasRole("EQUIPE")
                         .requestMatchers(HttpMethod.POST, "/api/solicitacoes").hasRole("CIDADAO")

@@ -1,0 +1,6 @@
+MED-01	Leitura ausente ou desatualizada	Leitura antiga, ausente, atrasada ou sem sinal. Solicite uma nova medição e confira o horário antes de orientar a equipe.
+CAD-02	Capacidade desconhecida ou zero	Capacidade do reservatório inválida ou desconhecida. Confirme o cadastro do ponto antes de converter o percentual em litros.
+OPE-03	Ponto fechado	Local de distribuição fechado. Confirme a situação com a equipe responsável antes de orientar deslocamento ou reabertura.
+EST-04	Divergência de estoque	Diferença entre volume estimado e estoque cadastrado. Confira a medição e o inventário do ponto antes de registrar qualquer ajuste.
+REP-05	Nível baixo ou esgotado	Reservatório baixo, vazio ou esgotado. Verifique o estoque disponível e encaminhe a necessidade de reposição para revisão humana.
+ROT-06	Acompanhamento de rotina	Estoque compatível e nível regular. Mantenha o acompanhamento periódico, registre o horário e repita a leitura na próxima ronda.

@@ -47,6 +47,7 @@
                            th:value="${ponto.estoqueLitros()}" aria-label="Estoque em litros"></meter>
                 </div>
                 <div class="acoes">
+                    <a class="botao secundario" th:href="@{/painel/pontos-agua/{id}/reservatorio(id=${ponto.id()})}">Ver reservatório</a>
                     <a class="botao secundario botao-editar" th:href="@{/painel/pontos-agua/{id}/editar(id=${ponto.id()})}">Editar cadastro</a>
                     <details class="disponibilidade">
                         <summary>Atualizar estoque e status</summary>
