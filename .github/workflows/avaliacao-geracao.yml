@@ -1,0 +1,21 @@
+name: Avaliação generativa com modelo local
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'iot/tests/geracao-real.sh'
+      - '.github/workflows/avaliacao-geracao.yml'
+permissions:
+  contents: read
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/geracao-real.sh
+        working-directory: iot
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resposta-do-modelo-local
+          path: iot/resultado-generativo.json

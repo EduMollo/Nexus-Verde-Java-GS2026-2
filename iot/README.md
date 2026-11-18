@@ -63,3 +63,7 @@ As métricas avaliam a recuperação de procedimentos em exemplos pequenos, cons
 Os integrantes e RMs constam em [INTEGRANTES.txt](INTEGRANTES.txt). O grupo utilizou ChatGPT/Codex em planejamento, implementação, elaboração dos testes e documentação.
 
 O arquivo `wokwi/cenario.yaml` também exercita o circuito em dois níveis, sem pareamento. Com o Wokwi CLI configurado, execute `wokwi-cli . --scenario cenario.yaml --timeout 20000` dentro de `wokwi/` após compilar. O monitor serial permite observar o nível e o LED antes de transmitir.
+
+## Evidências de integração
+
+[O firmware compilou e o n8n executou as duas ferramentas](https://github.com/EduMollo/Nexus-Verde-Java-GS2026-2/actions/runs/44394268334). No teste do contrato, o dublê exigiu que a ferramenta de ponto devolvesse os dados do reservatório e que a ferramenta de procedimentos recuperasse EST-04. O ensaio de geração com pesos reais pode ser repetido com `bash tests/geracao-real.sh` em Linux com Docker, jq, 12 GB de RAM e espaço para baixar o Qwen2.5 de 7 bilhões de parâmetros. O provedor público previsto para o n8n é a Groq. Durante indisponibilidade do agente, o painel identifica quando usou Spring AI em contingência.
