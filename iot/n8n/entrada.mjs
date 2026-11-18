@@ -16,7 +16,7 @@ createServer((req,res)=>{
     method:req.method,headers:saude?{}:{'content-type':'application/json','x-copiloto-key':token}},r=>{
       res.writeHead(r.statusCode,{'content-type':r.headers['content-type']||'text/plain'});r.pipe(res);
     });
-  upstream.setTimeout(55000,()=>upstream.destroy());
+  upstream.setTimeout(Number(process.env.IOT_AGENT_TIMEOUT_MS || 55000),()=>upstream.destroy());
   upstream.on('error',()=>{if(!res.headersSent)res.writeHead(503);res.end();});
   req.pipe(upstream);
 }).listen(Number(process.env.PORT || 10000),'0.0.0.0');
