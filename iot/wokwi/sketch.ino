@@ -209,6 +209,11 @@ void setup() {
 void loop() {
   int nivel=round(analogRead(SENSOR)*100.0/4095.0);
   digitalWrite(ALERTA,nivel<=15 ? HIGH : LOW);
+  static int anterior = -1;
+  if (anterior != nivel) {
+    anterior=nivel;
+    Serial.printf("Nivel simulado: %d%% | alerta: %s\n",nivel,nivel<=15 ? "ligado" : "desligado");
+  }
   if (Serial.available()) {
     String linha=Serial.readStringUntil('\n');
     linha.trim();

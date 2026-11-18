@@ -89,7 +89,7 @@
       "parameters": {
         "description": "Consultar a leitura, a diferença calculada e o estoque do ponto selecionado.",
         "language": "javaScript",
-        "jsCode": "={{ 'return ' + JSON.stringify(JSON.stringify($('Leitura do painel').first().json.body.situacao)) + ';' }}"
+        "jsCode": "const corpo = $('Leitura do painel').first().json.body;\nreturn JSON.stringify(corpo.situacao);"
       }
     },
     {
@@ -104,7 +104,7 @@
       "parameters": {
         "description": "Consultar os trechos recuperados por TF-IDF para a situação atual.",
         "language": "javaScript",
-        "jsCode": "={{ 'return ' + JSON.stringify(JSON.stringify($('Leitura do painel').first().json.body.fontes)) + ';' }}"
+        "jsCode": "const corpo = $('Leitura do painel').first().json.body;\nreturn JSON.stringify(corpo.fontes);"
       }
     },
     {

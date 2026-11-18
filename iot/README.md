@@ -61,3 +61,5 @@ As métricas avaliam a recuperação de procedimentos em exemplos pequenos, cons
 5. Dividir a exposição entre contexto cidadão, circuito, integração Java, agente/RAG e avaliação.
 
 Os integrantes e RMs constam em [INTEGRANTES.txt](INTEGRANTES.txt). O grupo utilizou ChatGPT/Codex em planejamento, implementação, elaboração dos testes e documentação.
+
+O arquivo `wokwi/cenario.yaml` também exercita o circuito em dois níveis, sem pareamento. Com o Wokwi CLI configurado, execute `wokwi-cli . --scenario cenario.yaml --timeout 20000` dentro de `wokwi/` após compilar. O monitor serial permite observar o nível e o LED antes de transmitir.
