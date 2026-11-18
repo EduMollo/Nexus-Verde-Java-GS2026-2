@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "author": "Nexus Verde · FIAP",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "nivel",
+      "top": 10,
+      "left": 220,
+      "attrs": {
+        "value": "51"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "alerta",
+      "top": 165,
+      "left": 210,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 170,
+      "left": 120,
+      "attrs": {
+        "value": "330"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:3V3",
+      "nivel:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "nivel:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:34",
+      "nivel:SIG",
+      "green",
+      []
+    ],
+    [
+      "esp:25",
+      "r1:1",
+      "orange",
+      []
+    ],
+    [
+      "r1:2",
+      "alerta:A",
+      "orange",
+      []
+    ],
+    [
+      "alerta:C",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ]
+  ]
+}

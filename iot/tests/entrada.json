@@ -1,0 +1,24 @@
+{
+  "situacao": {
+    "pontoId": 2,
+    "status": "ESTOQUE_BAIXO",
+    "capacidade": 8000,
+    "estoque": 1200,
+    "leitura": {
+      "evento": "55a88954-583d-41b5-b00f-51a468af21ab",
+      "medidaEm": "2026-11-18T19:00:00Z",
+      "percentual": 5,
+      "origem": "Cenário de avaliação"
+    },
+    "estimativa": 400,
+    "diferenca": -800,
+    "consulta": "Divergência de estoque"
+  },
+  "fontes": [
+    {
+      "codigo": "EST-04",
+      "titulo": "Divergência de estoque",
+      "trecho": "Diferença entre volume estimado e estoque cadastrado. Confira a medição e o inventário do ponto antes de registrar qualquer ajuste."
+    }
+  ]
+}
