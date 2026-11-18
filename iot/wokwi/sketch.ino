@@ -186,7 +186,7 @@ int transmitir() {
   esp_http_client_config_t cfg = {};
   cfg.url=url.c_str();
   cfg.cert_pem=CA_RAIZES;
-  cfg.timeout_ms=15000;
+  cfg.timeout_ms=60000;
   esp_http_client_handle_t http=esp_http_client_init(&cfg);
   if (!http) return -1;
   esp_http_client_set_method(http,HTTP_METHOD_POST);
