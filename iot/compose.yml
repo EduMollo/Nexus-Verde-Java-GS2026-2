@@ -1,0 +1,9 @@
+services:
+  agente:
+    build:
+      context: .
+      dockerfile: n8n/Dockerfile
+    ports: ["127.0.0.1:5679:10000"]
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:?Configure GROQ_API_KEY}
+      IOT_N8N_TOKEN: ${IOT_N8N_TOKEN:?Configure IOT_N8N_TOKEN}

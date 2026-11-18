@@ -1,0 +1,182 @@
+{
+  "id": "NexusAguaGS2026",
+  "name": "Nexus Verde · Copiloto de abastecimento",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 48
+  },
+  "nodes": [
+    {
+      "id": "Leituradopainel",
+      "name": "Leitura do painel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "abastecimento",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "250fd72b-ccbc-49db-afca-e3977ae8f6be",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "nvHeader001",
+          "name": "Painel Nexus Verde"
+        }
+      }
+    },
+    {
+      "id": "Agentedeabastecimento",
+      "name": "Agente de abastecimento",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "Redija uma orientação para a equipe de distribuição. Consulte os dados do ponto e os procedimentos. Retorne o JSON solicitado.",
+        "options": {
+          "systemMessage": "Use as ferramentas Consultar_ponto e Consultar_procedimentos antes de responder. Resuma a ação mais pertinente em português. Não declare qualidade da água, correção de estoque, entrega ou reposição efetuada. Retorne somente um objeto JSON com texto (até 900 caracteres) e fonte (código do procedimento aplicável). O painel já apresenta os números.",
+          "returnIntermediateSteps": true,
+          "maxIterations": 5
+        }
+      }
+    },
+    {
+      "id": "ModeloGroq",
+      "name": "Modelo Groq",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        240
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "llama-3.3-70b-versatile",
+          "mode": "id"
+        },
+        "options": {
+          "temperature": 0,
+          "maxTokens": 350
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "nvGroq001",
+          "name": "Groq compatível com OpenAI"
+        }
+      }
+    },
+    {
+      "id": "Consultarponto",
+      "name": "Consultar_ponto",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        260
+      ],
+      "parameters": {
+        "description": "Consultar a leitura, a diferença calculada e o estoque do ponto selecionado.",
+        "language": "javaScript",
+        "jsCode": "const corpo = $('Leitura do painel').first().json.body;\nreturn JSON.stringify(corpo.situacao);"
+      }
+    },
+    {
+      "id": "Consultarprocedimentos",
+      "name": "Consultar_procedimentos",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        260
+      ],
+      "parameters": {
+        "description": "Consultar os trechos recuperados por TF-IDF para a situação atual.",
+        "language": "javaScript",
+        "jsCode": "const corpo = $('Leitura do painel').first().json.body;\nreturn JSON.stringify(corpo.fontes);"
+      }
+    },
+    {
+      "id": "Validarfontes",
+      "name": "Validar fontes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const passos = $input.first().json;\nconst chamadas = new Set((passos.intermediateSteps || []).map(p => p.action?.tool));\nif (!chamadas.has('Consultar_ponto') || !chamadas.has('Consultar_procedimentos')) throw new Error('Consultas obrigatórias ausentes');\nconst raw = String(passos.output).trim().replace(/^```(?:json)?\\s*/i,'').replace(/\\s*```$/,'');\nconst resultado = JSON.parse(raw);\nconst fontes = $('Leitura do painel').first().json.body.fontes;\nif (!fontes.some(f => f.codigo === resultado.fonte) || typeof resultado.texto !== 'string' || !resultado.texto.trim() || resultado.texto.length > 900) throw new Error('Fonte ou orientação inválida');\nreturn [{json:{texto:resultado.texto.trim(),fonte:resultado.fonte}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Leitura do painel": {
+      "main": [
+        [
+          {
+            "node": "Agente de abastecimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de abastecimento": {
+      "main": [
+        [
+          {
+            "node": "Validar fontes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Groq": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de abastecimento",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar_ponto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de abastecimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar_procedimentos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de abastecimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
