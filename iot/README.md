@@ -67,3 +67,7 @@ O arquivo `wokwi/cenario.yaml` também exercita o circuito em dois níveis, sem 
 ## Evidências de integração
 
 [O firmware compilou e o n8n executou as duas ferramentas](https://github.com/EduMollo/Nexus-Verde-Java-GS2026-2/actions/runs/44394268334). No teste do contrato, o dublê exigiu que a ferramenta de ponto devolvesse os dados do reservatório e que a ferramenta de procedimentos recuperasse EST-04. O ensaio de geração com pesos reais pode ser repetido com `bash tests/geracao-real.sh` em Linux com Docker, jq, 12 GB de RAM e espaço para baixar o Qwen2.5 de 7 bilhões de parâmetros. O provedor público previsto para o n8n é a Groq. Durante indisponibilidade do agente, o painel identifica quando usou Spring AI em contingência.
+
+### Resultado do ensaio com modelo real
+
+O agente n8n consultou o ponto e recuperou o procedimento `EST-04`. Com Qwen2.5:7b via Ollama no GitHub Actions, pediu conferência da medição e do inventário antes de registrar ajustes. No exemplo, o volume estimado foi de 400 L e o saldo cadastrado era de 1.200 L. O modelo chamou a diferença de “excesso no estoque”. A interpretação adequada é que o cadastro registra 800 L a mais que a estimativa, sujeito a conferência. [Execução e artefato JSON](https://github.com/EduMollo/Nexus-Verde-Java-GS2026-2/actions/runs/44395260675).
