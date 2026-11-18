@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{painel/layout :: layout('Reservatório', 'pontos', ~{::conteudo})}">
+<body><div th:fragment="conteudo">
+    <a class="botao botao-discreto" th:href="@{/painel/pontos-agua}">Voltar aos pontos de água</a>
+    <section class="cartao">
+        <div class="pagina-titulo"><div><h1 th:text="${ponto.nome()}"></h1>
+            <p th:text="|${ponto.cidade()} · Monitoramento do reservatório|"></p></div></div>
+        <dl><dt>Estoque cadastrado</dt><dd th:text="|${situacao.estoque()} de ${situacao.capacidade()} L|"></dd></dl>
+        <div th:if="${situacao.leitura() != null}">
+            <dl><dt>Nível simulado</dt><dd th:text="|${situacao.leitura().percentual()}%|"></dd>
+                <dt th:if="${situacao.estimativa()!=null}">Volume estimado</dt><dd th:if="${situacao.estimativa()!=null}" th:text="|${situacao.estimativa()} L|"></dd>
+                <dt th:if="${situacao.diferenca()!=null}">Diferença (estimativa menos estoque)</dt><dd th:if="${situacao.diferenca()!=null}" th:text="|${situacao.diferenca()} L|"></dd>
+                <dt>Origem e horário UTC</dt><dd th:text="|${situacao.leitura().origem()} · ${situacao.leitura().medidaEm()}|"></dd>
+                <dt>Identificador da leitura</dt><dd th:text="${situacao.leitura().evento()}"></dd></dl>
+        </div>
+        <p th:if="${situacao.leitura()==null}">Este ponto ainda não recebeu uma medição do Wokwi.</p>
+        <p><strong th:text="${situacao.consulta()}"></strong></p>
+        <div class="acoes">
+            <form method="post" th:action="@{/painel/pontos-agua/{id}/reservatorio/analisar(id=${ponto.id()})}">
+                <button class="botao" type="submit">Analisar abastecimento</button>
+                <button class="botao secundario" name="simular" value="true" type="submit">Testar cenário de 5%</button>
+            </form>
+        </div>
+        <p>O cenário de avaliação usa uma leitura temporária. As recomendações dependem de conferência pela equipe.</p>
+        <p role="alert" th:if="${erroIa}" th:text="${erroIa}"></p>
+        <section aria-label="Orientação" th:if="${parecer}">
+            <h2>Orientação para a equipe</h2><p th:text="${parecer.texto()}"></p>
+            <p th:text="|Fonte: ${parecer.fonte().codigo()} · ${parecer.fonte().titulo()}|"></p>
+            <blockquote th:text="${parecer.fonte().trecho()}"></blockquote><small th:text="${parecer.motor()}"></small>
+        </section>
+        <details th:open="${chaveSensor!=null}"><summary>Parear circuito Wokwi</summary>
+            <p>Inicie o circuito, gere a chave e cole a linha no monitor serial. O acesso de escrita expira em 30 minutos.</p>
+            <form method="post" th:action="@{/painel/pontos-agua/{id}/reservatorio/parear(id=${ponto.id()})}">
+                <button type="submit" class="botao secundario">Gerar chave de pareamento</button></form>
+            <p th:if="${chaveSensor}"><code th:text="|${ponto.id()} ${chaveSensor}|"></code></p>
+        </details>
+    </section>
+</div></body></html>
