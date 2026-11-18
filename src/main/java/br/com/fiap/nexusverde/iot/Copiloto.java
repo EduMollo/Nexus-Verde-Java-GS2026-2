@@ -32,30 +32,33 @@ class Copiloto {
         List<Procedimentos.Fonte> fontes = base.buscar(situacao.consulta());
         if (fontes.isEmpty()) throw new IllegalStateException("Nenhuma fonte recuperada");
         String contexto = json.writeValueAsString(Map.of("situacao",situacao,"fontes",fontes));
-        Resposta resposta;
-        String motor;
         if (!webhook.isBlank()) {
-            if (token.isBlank()) throw new IllegalStateException("Webhook sem credencial");
-            var req = HttpRequest.newBuilder(URI.create(webhook)).timeout(Duration.ofSeconds(50))
-                    .header("Content-Type","application/json").header("X-Copiloto-Key",token)
-                    .POST(HttpRequest.BodyPublishers.ofString(contexto)).build();
-            var r = http.send(req,HttpResponse.BodyHandlers.ofString());
-            if (r.statusCode()!=200) throw new IllegalStateException("Agente indisponível");
-            resposta=json.readValue(r.body(),Resposta.class);
-            motor="Agente n8n";
-        } else {
-            var modelo = modelos.getIfAvailable();
-            if (modelo==null) throw new IllegalStateException("Modelo indisponível");
-            String saida = ChatClient.create(modelo).prompt().system("""
-                    Redija uma orientação curta em português para a equipe de abastecimento.
-                    Use a situação e o procedimento mais pertinente. O cenário é fictício. Não afirme potabilidade,
-                    entrega efetuada ou ajuste de estoque. Os números já estão na interface.
-                    Retorne somente JSON com texto e fonte (código de um procedimento recuperado).
-                    """).user(contexto).call().content();
-            if (saida==null) throw new IllegalStateException("Resposta vazia");
-            resposta=json.readValue(saida.strip().replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", ""),Resposta.class);
-            motor="Spring AI";
+            try {
+                if (token.isBlank()) throw new IllegalStateException("Webhook sem credencial");
+                var req = HttpRequest.newBuilder(URI.create(webhook)).timeout(Duration.ofSeconds(50))
+                        .header("Content-Type","application/json").header("X-Copiloto-Key",token)
+                        .POST(HttpRequest.BodyPublishers.ofString(contexto)).build();
+                var r = http.send(req,HttpResponse.BodyHandlers.ofString());
+                if (r.statusCode()!=200) throw new java.io.IOException("Agente indisponível");
+                return validar(json.readValue(r.body(),Resposta.class), fontes, "Agente n8n");
+            } catch (java.io.IOException | RuntimeException e) {
+                org.slf4j.LoggerFactory.getLogger(Copiloto.class).warn("Agente n8n indisponível ({}). Usando o modelo do painel.",e.getClass().getSimpleName());
+            }
         }
+        var modelo = modelos.getIfAvailable();
+        if (modelo==null) throw new IllegalStateException("Modelo indisponível");
+        String saida = ChatClient.create(modelo).prompt().system("""
+                Redija uma orientação curta em português para a equipe de abastecimento.
+                Use a situação e o procedimento mais pertinente. O cenário é fictício. Não afirme potabilidade,
+                entrega efetuada ou ajuste de estoque. Os números já estão na interface.
+                Retorne somente JSON com texto e fonte (código de um procedimento recuperado).
+                """).user(contexto).call().content();
+        if (saida==null) throw new IllegalStateException("Resposta vazia");
+        var resposta=json.readValue(saida.strip().replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", ""),Resposta.class);
+        return validar(resposta, fontes, webhook.isBlank() ? "Spring AI" : "Spring AI · contingência do agente");
+    }
+
+    private Parecer validar(Resposta resposta, List<Procedimentos.Fonte> fontes, String motor) {
         if (resposta.texto()==null || resposta.texto().isBlank() || resposta.texto().length()>900)
             throw new IllegalStateException("Orientação inválida");
         var fonte = fontes.stream().filter(f -> f.codigo().equals(resposta.fonte())).findFirst().orElseThrow();

@@ -128,6 +128,12 @@ class ApiMobileTest {
                 .andExpect(content().string(containsString("/painel/pontos/" + ponto + "/disponibilidade")))
                 .andExpect(content().string(containsString("1000 de 3000 L")))
                 .andExpect(content().string(not(containsString("Sem abastecimento"))));
+        mvc.perform(get("/painel/pontos-agua/{id}/reservatorio", ponto).session(sessao))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Testar cenário de 5%")));
+        mvc.perform(post("/painel/pontos-agua/{id}/reservatorio/analisar", ponto).session(sessao)
+                        .param("_csrf", csrfFicha.group(1)).param("simular","true"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("150 L")))
+                .andExpect(content().string(containsString("Cenário de avaliação")));
         var edicao = mvc.perform(get("/painel/pontos-agua/{id}/editar", ponto).session(sessao))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Posto de teste"))).andReturn();
         var versao = Pattern.compile("name=\"versao\" value=\"([^\"]+)\"")
