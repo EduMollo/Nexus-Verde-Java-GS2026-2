@@ -114,7 +114,3 @@ A resposta acrescenta `id`, `status`, `prioridade`, `analiseIa`, `solicitante`, 
 
 No painel, a equipe pode gerar uma análise com Spring AI. O modelo recebe tipo, urgência, quantidade, indicação de grupo vulnerável e a prioridade calculada pelo sistema. A resposta fundamenta a triagem e aparece em `analiseIa`. O atendimento permanece sob responsabilidade humana. A análise é opcional e a operação manual funciona com o provedor desligado.
 
-
-## Uso de IA no desenvolvimento
-
-ChatGPT/Codex foi usado para planejamento, implementação, revisão, testes e documentação. A funcionalidade da aplicação é implementada com Spring AI no fluxo de triagem.
