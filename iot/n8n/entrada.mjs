@@ -1,3 +1,4 @@
+import './agente.mjs';
 import { createServer, request } from 'node:http';
 import { timingSafeEqual, createHash } from 'node:crypto';
 const hash = texto => createHash('sha256').update(texto).digest();
