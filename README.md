@@ -6,6 +6,12 @@ CitizenTech para ajudar moradores afetados por interrupções de abastecimento a
 
 [**Painel da equipe**](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
 
+**Acesso a Plataforma**
+
+**Login:** equipe@nexusverde.example
+
+**Senha:** 123456
+
 ## Demonstração online
 
 - [API do Mobile](https://nexus-verde-java-gs2026-2-tprk.onrender.com/api)
