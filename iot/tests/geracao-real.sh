@@ -10,10 +10,10 @@ curl -fsS --retry 20 --retry-all-errors --retry-delay 2 http://localhost:11434/a
 docker exec ollama ollama pull qwen2.5:7b
 curl -fsS http://localhost:11434/api/generate -d '{"model":"qwen2.5:7b","keep_alive":"10m"}' >/dev/null
 docker build -f n8n/Dockerfile -t avaliacao-n8n .
-jq '(.nodes[] | select(.name=="Modelo Groq").parameters.model.value)="qwen2.5:7b" | .settings.executionTimeout=300' n8n/abastecimento.json >"$tmp/workflow.json"
+jq '.settings.executionTimeout=300' n8n/abastecimento.json >"$tmp/workflow.json"
 docker run -d --name ensaio --network avaliacao -p 127.0.0.1:5679:10000 \
   -v "$tmp/workflow.json:/opt/nexus/abastecimento.json:ro" -e IOT_N8N_TOKEN="$chave" \
-  -e IOT_AGENT_TIMEOUT_MS=300000 -e GROQ_API_KEY=local-sem-autenticacao -e MODEL_BASE_URL=http://ollama:11434/v1 avaliacao-n8n
+  -e MODEL_ID=qwen2.5:7b -e IOT_AGENT_TIMEOUT_MS=300000 -e GROQ_API_KEY=local-sem-autenticacao -e MODEL_BASE_URL=http://ollama:11434/v1 avaliacao-n8n
 curl -fsS --retry 60 --retry-all-errors --retry-delay 3 http://localhost:5679/healthz
 curl -fsS --max-time 310 -H "X-Copiloto-Key: $chave" -H 'Content-Type: application/json' --data @tests/entrada.json \
   http://localhost:5679/webhook/abastecimento > resultado-generativo.json
