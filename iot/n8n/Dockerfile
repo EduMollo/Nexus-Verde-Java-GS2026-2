@@ -1,6 +1,7 @@
 FROM ghcr.io/n8n-io/n8n:2.48.5
 ENV N8N_LISTEN_ADDRESS=127.0.0.1 N8N_PORT=5678 N8N_DIAGNOSTICS_ENABLED=false N8N_VERSION_NOTIFICATIONS_ENABLED=false N8N_TEMPLATES_ENABLED=false N8N_PAYLOAD_SIZE_MAX=1 EXECUTIONS_DATA_SAVE_ON_SUCCESS=none EXECUTIONS_DATA_SAVE_ON_ERROR=none
-ENV NODES_INCLUDE='["n8n-nodes-base.webhook","n8n-nodes-base.code","@n8n/n8n-nodes-langchain.agent","@n8n/n8n-nodes-langchain.lmChatOpenAi","@n8n/n8n-nodes-langchain.toolCode"]' \
+ENV NODES_INCLUDE='["n8n-nodes-base.webhook","n8n-nodes-base.httpRequest"]' \
+    N8N_RUNNERS_MODE=external \
     N8N_COMMUNITY_PACKAGES_ENABLED=false \
     N8N_PERSONALIZATION_ENABLED=false
 COPY --chown=node:node n8n/ /opt/nexus/
