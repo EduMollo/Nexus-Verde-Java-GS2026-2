@@ -2,11 +2,13 @@
 
 CitizenTech para ajudar moradores afetados por interrupções de abastecimento a localizar pontos de distribuição e solicitar água. A equipe acompanha a disponibilidade, organiza a triagem e registra o andamento. Os dados da carga acadêmica são fictícios.
 
+[**Video**](https://youtu.be/4kTnQgR9ZAs)
+[**Painel da equipe**](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
+
 ## Demonstração online
 
 - [API do Mobile](https://nexus-verde-java-gs2026-2-tprk.onrender.com/api)
 - [Swagger](https://nexus-verde-java-gs2026-2-tprk.onrender.com/swagger-ui/index.html)
-- [Painel da equipe](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
 
 O painel tem páginas próprias para [solicitações](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/solicitacoes) e [pontos de água](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel/pontos-agua). A ficha de cada solicitação registra as novas mudanças de status e exige motivo no cancelamento pelo painel. A equipe pode buscar pedidos e cadastrar, editar ou atualizar o estoque dos pontos.
 
@@ -51,7 +53,6 @@ Envie `Authorization: Bearer <token>` nas operações protegidas. Os JWTs expira
 | PUT, DELETE | /pontos-agua/{id} | Equipe. |
 | GET | /regioes | Usuários autenticados. |
 
-A equipe também pode usar `GET /regioes/{id}`, `POST /regioes`, `PUT /regioes/{id}` e `DELETE /regioes/{id}` pelo Swagger. Listagens retornam `content`, `totalElements`, `totalPages`, `number` e `size`. Os parâmetros incluem `page` (inicia em 0) e `size` (até 200). Erros têm `message` e `errors`. Cadastro duplicado retorna 409 e credenciais inválidas retornam 401.
 
 Exemplo de cadastro
 
@@ -96,13 +97,6 @@ A resposta acrescenta `id`, `status`, `prioridade`, `analiseIa`, `solicitante`, 
 
 No painel, a equipe pode gerar uma análise com Spring AI. O modelo recebe tipo, urgência, quantidade, indicação de grupo vulnerável e a prioridade calculada pelo sistema. A resposta fundamenta a triagem e aparece em `analiseIa`. O atendimento permanece sob responsabilidade humana. A análise é opcional e a operação manual funciona com o provedor desligado.
 
-## Publicar e validar
-
-O `Dockerfile` gera a imagem do serviço. Em um host de containers HTTPS, use `SPRING_PROFILES_ACTIVE=prod,demo` com um PostgreSQL dedicado à avaliação. Configure `PORT`, `DB_URL` (JDBC), `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo de 32 bytes), `EQUIPE_EMAIL`, `EQUIPE_SENHA`, `RABBITMQ_URL`, `NEXUS_RABBIT_ENABLED=true` e as variáveis do modelo. Configure o host para checar `/actuator/health`. As credenciais da conta de avaliação devem ser compartilhadas no canal da equipe.
-
-Para publicar no Render, crie o PostgreSQL `nexus-verde-gs2026-db` na região Virginia e importe o repositório como Blueprint no mesmo workspace. O `render.yaml` vincula o banco pela rede privada, gera o segredo JWT e solicita a senha da equipe de avaliação. Habilite RabbitMQ no serviço com `RABBITMQ_URL` e `NEXUS_RABBIT_ENABLED=true`. Habilite a IA com as variáveis do modelo descritas acima.
-
-Use `./mvnw clean verify` ou `.\mvnw.cmd clean verify`. O workflow Java executa a verificação com H2 e também testa a publicação e o consumo reais com PostgreSQL e RabbitMQ. Os testes de IA usam um modelo simulado para verificar o envio e o armazenamento da resposta.
 
 ## Uso de IA no desenvolvimento
 
