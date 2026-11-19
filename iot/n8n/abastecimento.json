@@ -62,12 +62,12 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "llama-3.3-70b-versatile",
+          "value": "openai/gpt-oss-120b",
           "mode": "id"
         },
         "options": {
           "temperature": 0,
-          "maxTokens": 350
+          "maxTokens": 1600
         }
       },
       "credentials": {
