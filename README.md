@@ -2,7 +2,7 @@
 
 CitizenTech para ajudar moradores afetados por interrupções de abastecimento a localizar pontos de distribuição e solicitar água. A equipe acompanha a disponibilidade, organiza a triagem e registra o andamento. Os dados da carga acadêmica são fictícios.
 
-[**Video**](https://youtu.be/4kTnQgR9ZAs)
+[**Video**](https://youtu.be/uu5u6b3UKi0)
 
 [**Painel da equipe**](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
 
@@ -11,6 +11,16 @@ CitizenTech para ajudar moradores afetados por interrupções de abastecimento a
 **Login:** equipe@nexusverde.example
 
 **Senha:** 123456
+
+## Equipe - 2TDSPF
+
+| Integrante | RM |
+|---|---|
+| Carlos Alberto Guedes Neto | 566022 |
+| Eduardo Novaes Mollo | 561515 |
+| Luan Peixoto Marins Rocha | 562258 |
+| Mathaus Victor Souza Marcelino | 564146 |
+| Vinicius Luis Exposito Morassi | 563340 |
 
 ## Demonstração online
 
