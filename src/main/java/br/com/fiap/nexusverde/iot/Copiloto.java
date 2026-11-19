@@ -39,20 +39,26 @@ class Copiloto {
                         .header("Content-Type","application/json").header("X-Copiloto-Key",token)
                         .POST(HttpRequest.BodyPublishers.ofString(contexto)).build();
                 var r = http.send(req,HttpResponse.BodyHandlers.ofString());
-                if (r.statusCode()!=200) throw new java.io.IOException("Agente indisponível");
+                if (r.statusCode()!=200) {
+                    throw new java.io.IOException("HTTP " + r.statusCode());
+                }
                 return validar(json.readValue(r.body(),Resposta.class), fontes, "Agente n8n");
             } catch (java.io.IOException | RuntimeException e) {
-                org.slf4j.LoggerFactory.getLogger(Copiloto.class).warn("Agente n8n indisponível ({}). Usando o modelo do painel.",e.getClass().getSimpleName());
+                org.slf4j.LoggerFactory.getLogger(Copiloto.class).warn("Agente n8n indisponível ({}). Usando o modelo do painel.",e.getMessage() != null && e.getMessage().matches("HTTP [0-9]{3}")
+                                ? e.getMessage() : e.getClass().getSimpleName());
             }
         }
         var modelo = modelos.getIfAvailable();
         if (modelo==null) throw new IllegalStateException("Modelo indisponível");
+        var procedimento = fontes.get(0);
+        String contextoOperacional = json.writeValueAsString(Map.of(
+                "situacao", situacao.consulta(), "procedimento", procedimento));
         String saida = ChatClient.create(modelo).prompt().system("""
                 Redija uma orientação curta em português para a equipe de abastecimento.
-                Use a situação e o procedimento mais pertinente. O cenário é fictício. Não afirme potabilidade,
-                entrega efetuada ou ajuste de estoque. Os números já estão na interface.
+                Use a situação já avaliada e a ação do procedimento fornecido. O cenário é fictício. Não afirme potabilidade,
+                entrega efetuada ou ajuste de estoque. Escreva apenas a ação a tomar, sem números, percentuais ou volumes.
                 Retorne somente JSON com texto e fonte (código de um procedimento recuperado).
-                """).user(contexto).call().content();
+                """).user(contextoOperacional).call().content();
         if (saida==null) throw new IllegalStateException("Resposta vazia");
         var resposta=json.readValue(saida.strip().replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", ""),Resposta.class);
         return validar(resposta, fontes, webhook.isBlank() ? "Spring AI" : "Spring AI · contingência do agente");
@@ -61,7 +67,9 @@ class Copiloto {
     private Parecer validar(Resposta resposta, List<Procedimentos.Fonte> fontes, String motor) {
         if (resposta.texto()==null || resposta.texto().isBlank() || resposta.texto().length()>900)
             throw new IllegalStateException("Orientação inválida");
-        var fonte = fontes.stream().filter(f -> f.codigo().equals(resposta.fonte())).findFirst().orElseThrow();
+        var fonte = fontes.get(0);
+        if (!fonte.codigo().equals(resposta.fonte()) || resposta.texto().matches("(?s).*\\d.*"))
+            throw new IllegalStateException("Orientação incompatível com o procedimento prioritário");
         return new Parecer(resposta.texto().strip(), fonte, motor);
     }
 }
