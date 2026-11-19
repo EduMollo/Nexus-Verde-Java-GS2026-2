@@ -3,6 +3,7 @@
 CitizenTech para ajudar moradores afetados por interrupções de abastecimento a localizar pontos de distribuição e solicitar água. A equipe acompanha a disponibilidade, organiza a triagem e registra o andamento. Os dados da carga acadêmica são fictícios.
 
 [**Video**](https://youtu.be/4kTnQgR9ZAs)
+
 [**Painel da equipe**](https://nexus-verde-java-gs2026-2-tprk.onrender.com/painel)
 
 ## Demonstração online
